@@ -286,8 +286,8 @@ class OpenStudio::Model::Model
     space_type.setName(name)
 
     # Set the standards building type and space type for this new space type
-    space_type.setStandardsBuildingType(building_type)
-    space_type.setStandardsSpaceType(spc_type)
+    space_type.setStandardsBuildingType(building_type) unless building_type.nil? 
+    space_type.setStandardsSpaceType(spc_type) unless spc_type.nil? 
 
     # Set the rendering color of the space type
     rgb = data['rgb']
@@ -579,17 +579,17 @@ class OpenStudio::Model::Model
     # First check model and return material if it already exists
     self.getMaterials.each do |material|
       if material.name.get.to_s == material_name
-        OpenStudio::logFree(OpenStudio::Info, 'openstudio.standards.Model', "Already added material: #{material_name}")
+        OpenStudio::logFree(OpenStudio::Info, 'openstudio.standards.Model', "Already added material: '#{material_name}'")
         return material
       end
     end
     
-    OpenStudio::logFree(OpenStudio::Info, 'openstudio.standards.Model', "Adding material: #{material_name}")
+    OpenStudio::logFree(OpenStudio::Info, 'openstudio.standards.Model', "Adding material: '#{material_name}'")
 
     # Get the object data
     data = self.find_object(self.standards['materials'], {'name'=>material_name})
     if !data
-      OpenStudio::logFree(OpenStudio::Warn, 'openstudio.standards.Model', "Cannot find data for material: #{material_name}, will not be created.")
+      OpenStudio::logFree(OpenStudio::Warn, 'openstudio.standards.Model', "Cannot find data for material: '#{material_name}', will not be created.")
       return false #TODO change to return empty optional material
     end
     
