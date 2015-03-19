@@ -41,7 +41,13 @@ def check_validity
     num_names = names.size
     num_unique_names = names.uniq.size
     if num_names > num_unique_names
-      @errors << "ERROR - #{key} - #{num_names - num_unique_names} non-unique names in the #{names.size} rows."
+      counts = names.group_by{|i| i}.map{|k,v| [k, v.count] }
+      counts_hash = Hash[*counts.flatten]
+      counts_hash.each do |k, v|
+        if v > 1
+          @errors << "ERROR - #{key} - the name '#{k}' is repeated #{v} times.  Names must be unique."
+        end
+      end
     end
     
   end 
@@ -118,7 +124,7 @@ def check_validity
     left_layers = left_construction['materials']
     right_layers = right_construction['materials']
     unless (left_layers.join(',') == right_layers.reverse.join(','))
-      @errors << "ERROR - Layers are not reverse equal, '#{left}' vs '#{right}' from #{construction_set}."
+      @errors << "ERROR - Layers are not reverse equal, '#{left}' vs '#{right}' from #{construction_set['template']}-#{construction_set['building_type']}-#{construction_set['space_type']}-#{construction_set['climate_zone_set']}."
       return false
     end
 
