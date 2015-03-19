@@ -31,6 +31,15 @@ namespace :build do
     generate_cec_template
     
   end    
+
+  desc 'Create osm with Australian Space Types/Construction Sets/Constructions/Materials'
+  task :australian_template do
+
+    require_relative 'lib/CreateTemplateModels'
+    
+    generate_australian_template
+    
+  end  
   
 end
 

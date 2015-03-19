@@ -69,7 +69,7 @@ def create_template_models
     # Add each of these space types to the model and
     # to the master template model
     space_types.each do |space_type|
-=begin
+
     template_model_spc_type = template_model.add_space_type(space_type['template'], space_type['climate_zone_set'], space_type['building_type'], space_type['space_type'])
       master_model_spc_type = master_model.add_space_type(space_type['template'], space_type['climate_zone_set'], space_type['building_type'], space_type['space_type'])
 
@@ -80,8 +80,7 @@ def create_template_models
         if space_type['building_type'] == default_building_type
           master_model.getBuilding.setSpaceType(master_model_spc_type)
         end
-      end
-=end  
+      end 
       
     end
     
@@ -173,5 +172,67 @@ def generate_cec_template
   template_model.toIdfFile.save(template_file_save_path, true) 
 
 end
+
+def generate_australian_template
+
+  # Create a master model that will contain all space types
+  template_model = OpenStudio::Model::Model.new
+
+  # Load the standards JSON for the master model
+  template_model.load_openstudio_standards_json(@path_to_standards_json)
+
+  # Export all the Australian Materials
+  template_model.standards['materials'].each do |material_data|
+    
+    # Skip non-Australian materials
+    next unless material_data['name'].include?('Australian') || material_data['name'].include?('BCA')
+  
+    # Add the material to the template
+    template_model.add_material(material_data['name'])
+  
+  end
+
+  # Export all the Australian Constructions
+  template_model.standards['constructions'].each do |construction_data|
+    
+    # Skip non-Australian constructions
+    next unless construction_data['name'].include?('Australian') || construction_data['name'].include?('BCA')
+  
+    # Add the construction to the template
+    template_model.add_construction(construction_data['name'])
+  
+  end
+
+  # Export all the Australian Construction Sets
+  template_model.standards['construction_sets'].each do |const_set_data|
+    
+    # Skip non-Australian construction sets
+    next unless const_set_data['template'].include?('Australian') || const_set_data['template'].include?('BCA')
+  
+    # Add the construction set to the template
+    template_model.add_construction_set(const_set_data['template'], const_set_data['climate_zone_set'], const_set_data['building_type'], const_set_data['space_type'])
+    
+  end  
+  
+  # Export all the Australian Space Types
+  template_model.standards['space_types'].each do |space_type_data|
+    
+    # Skip non-Australian construction sets
+    next unless space_type_data['template'].include?('Australian') || space_type_data['template'].include?('BCA')
+  
+    # Add the construction set to the template
+    template_model.add_space_type(space_type_data['template'], space_type_data['climate_zone_set'], space_type_data['building_type'], space_type_data['space_type'])
+    
+  end    
+  
+  # Make sure that the air wall is included in the template
+  ensure_air_wall(template_model)
+
+  # Save the template model
+  template_file_save_path = OpenStudio::Path.new("#{Dir.pwd}/templates/Australian Template.osm")
+  template_model.toIdfFile.save(template_file_save_path, true) 
+
+end
+
 
 
