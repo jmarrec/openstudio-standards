@@ -139,6 +139,27 @@ def check_validity
     check_reverse_equal(cs['interior_floors'], cs['interior_ceilings'], cs, constructions)
   end
  
+  # Check for commas in names,
+  # which cause problems b/c IDF uses commas to separate fields.
+  puts "****Check for commas in names which cause problems b/c IDF uses commas to separate fields****"   
+  standards.each do |key, data| 
+    
+    # Skip sheets not stored as hashes
+    unless data[0].is_a?(Hash)
+      puts "Skipping #{key} because its rows aren't hashes"
+      next
+    end
+    # Loop through the objects
+    data.each do |row|
+      if row['name']
+        if row['name'].include?(',')
+          @errors << "ERROR - #{key} - '#{row['name']}' - name includes commas."
+        end
+      end
+    end
+   
+  end 
+ 
   puts "***Errors***"
   @errors.each do |err|
     puts err
