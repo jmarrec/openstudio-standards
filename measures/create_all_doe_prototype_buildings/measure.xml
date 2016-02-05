@@ -1,0 +1,73 @@
+<measure>
+  <schema_version>3.0</schema_version>
+  <name>create_all_doe_prototype_buildings</name>
+  <uid>716ddc75-0be1-4faa-b819-065b195e403d</uid>
+  <version_id>dd9a1a8f-f2f4-4db4-b6e3-f82e627e5133</version_id>
+  <xml_checksum>28AD5222</xml_checksum>
+  <class_name>CreateAllDOEPrototypeBuildings</class_name>
+  <display_name>Create All DOE PrototypeBuildings</display_name>
+  <description>This measure creates all DOE prototype buildings, naming the OSM files {building_type}-{template}-{climate_zone}.osm</description>
+  <modeler_description>This measure creates all DOE prototype buildings, naming the OSM files {building_type}-{template}-{climate_zone}.osm</modeler_description>
+  <arguments/>
+  <provenances/>
+  <tags>
+    <tag>Whole Building.Space Types</tag>
+  </tags>
+  <attributes>
+    <attribute>
+      <name>Measure Type</name>
+      <value>ModelMeasure</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Apply Measure Now</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>OpenStudio Application</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Parametric Analysis Tool</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Software Tool</name>
+      <value>Analysis Spreadsheet</value>
+      <datatype>string</datatype>
+    </attribute>
+    <attribute>
+      <name>Intended Use Case</name>
+      <value>Model Articulation</value>
+      <datatype>string</datatype>
+    </attribute>
+  </attributes>
+  <files>
+    <file>
+      <filename>create_all_doe_prototype_buildings_test.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>test</usage_type>
+      <checksum>3AA2071C</checksum>
+    </file>
+    <file>
+      <filename>example_model.osm</filename>
+      <filetype>osm</filetype>
+      <usage_type>test</usage_type>
+      <checksum>C4F35230</checksum>
+    </file>
+    <file>
+      <version>
+        <software_program>OpenStudio</software_program>
+        <identifier>1.10.0</identifier>
+        <min_compatible>1.10.0</min_compatible>
+      </version>
+      <filename>measure.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>script</usage_type>
+      <checksum>A9B02D10</checksum>
+    </file>
+  </files>
+</measure>

@@ -26,5 +26,6 @@ module OpenstudioStandards
   require_relative 'openstudio-standards/utilities/logging'
   require_relative 'openstudio-standards/utilities/simulation'
   require_relative 'openstudio-standards/utilities/hash'
+  require_relative 'openstudio-standards/utilities/os_lib_reporting'
 
 end
