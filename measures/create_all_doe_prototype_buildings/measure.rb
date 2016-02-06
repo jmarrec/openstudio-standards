@@ -43,7 +43,9 @@ class CreateAllDOEPrototypeBuildings < OpenStudio::Ruleset::ModelUserScript
     building_type_chs << 'SmallOffice'
     building_type_chs << 'MediumOffice'
     building_type_chs << 'LargeOffice'
+=end
     building_type_chs << 'SmallHotel'
+=begin
     building_type_chs << 'LargeHotel'
     building_type_chs << 'Warehouse'
     building_type_chs << 'RetailStandalone'
@@ -53,20 +55,18 @@ class CreateAllDOEPrototypeBuildings < OpenStudio::Ruleset::ModelUserScript
     building_type_chs << 'Hospital'
     building_type_chs << 'Outpatient'
     building_type_chs << 'MidriseApartment'
-=end
     building_type_chs << 'HighriseApartment'
-=begin
-=end
-    
+=end    
     # Make an argument for the template
     template_chs = []
     template_chs << 'DOE Ref Pre-1980'
+=begin
     template_chs << 'DOE Ref 1980-2004'
     template_chs << '90.1-2004'
     template_chs << '90.1-2007'
     template_chs << '90.1-2010'
     template_chs << '90.1-2013'
-
+=end
     cz_ba2ashrae_hash = Hash.new
     cz_ba2ashrae_hash['BA-HotHumid'] = 'ASHRAE 169-2006-2A'
     cz_ba2ashrae_hash['BA-HotDry'] = 'ASHRAE 169-2006-3B'
@@ -79,6 +79,7 @@ class CreateAllDOEPrototypeBuildings < OpenStudio::Ruleset::ModelUserScript
 
     # Make an argument for the climate zone
     climate_zone_chs = []
+=begin
     climate_zone_chs << 'BA-HotHumid'
     climate_zone_chs << 'BA-HotDry'
     climate_zone_chs << 'BA-MixedDry'
@@ -86,6 +87,7 @@ class CreateAllDOEPrototypeBuildings < OpenStudio::Ruleset::ModelUserScript
     climate_zone_chs << 'BA-Marine'
     climate_zone_chs << 'BA-Cold'
     climate_zone_chs << 'BA-VeryCold'
+=end
     climate_zone_chs << 'BA-SubArctic'
 
     # Turn debugging output on/off
