@@ -1018,7 +1018,7 @@ class OpenStudio::Model::Model
   end
 
 
-  # Changes the infiltration coefficients for the prototype vintages.
+  # Changes the sizing parameters for the prototype vintages.
   #
   # @param (see #add_constructions)
   # @return [Bool] returns true if successful, false if not
@@ -1039,6 +1039,7 @@ class OpenStudio::Model::Model
         clg = 1.33
         htg = 1.33
       end
+    # ASHRAE App G, G3.1.2.2 Equipment Capacities: 15% for cooling, 25% for heating
     when '90.1-2004', '90.1-2007', '90.1-2010', '90.1-2013'
       case building_type
       when 'Hospital', 'LargeHotel', 'MediumOffice', 'LargeOffice', 'Outpatient', 'PrimarySchool'
@@ -1095,6 +1096,8 @@ class OpenStudio::Model::Model
 
     # Check each airloop
     self.getAirLoopHVACs.each do |air_loop|
+    
+      # Check if an economizer is required. Example for App G 2007, CZ 4A: it isn't
       if air_loop.is_economizer_required(self.template, self.climate_zone) == true
         # If an economizer is required, determine the economizer type
         # in the prototype buildings, which depends on climate zone.
