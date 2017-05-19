@@ -120,11 +120,22 @@ class OpenStudio::Model::BoilerHotWater
     # Define the criteria to find the boiler properties
     # in the hvac standards data set.
     search_criteria = find_search_criteria(template)
+    # This returns ['Electric', 'Gas'] and not ['Electricity', 'Natural Gas']
     fuel_type = search_criteria['fuel_type']
     fluid_type = search_criteria['fluid_type']
 
     # Get the capacity
     capacity_w = find_capacity
+
+
+    # TODO: Is this the right place to put it?
+    # Set the minimumPartLoad Ratio according to PNNL-25130, table 69
+    if fuel_type == 'Electricity'
+      setMinimumPartLoadRatio(0.01)
+    # Else, it's Fuel-Fired
+    else
+      setMinimumPartLoadRatio(0.25)
+    end
 
     # for NECB, check if secondary and/or modulating boiler required
     if template == 'NECB 2011'
