@@ -1,0 +1,59 @@
+
+================================================================================
+             L O A D I N G     O N L Y     -     1 0     T I M E S 
+================================================================================
+Rehearsal -------------------------------------------------------------------------------
+Read Standards - strings:                    10.200000   0.110000  10.310000 ( 10.319396)
+Read Standards - symbols:                    11.810000   0.050000  11.860000 ( 11.859015)
+Read Standards - GoogleHashDenseRubyToRuby:  11.550000   0.080000  11.630000 ( 11.643144)
+--------------------------------------------------------------------- total: 33.800000sec
+
+                                                  user     system      total        real
+Read Standards - strings:                     9.550000   0.100000   9.650000 (  9.659718)
+Read Standards - symbols:                    10.240000   0.060000  10.300000 ( 10.315660)
+Read Standards - GoogleHashDenseRubyToRuby:  10.550000   0.080000  10.630000 ( 10.626959)
+
+================================================================================
+           S E A C H I N G     O N L Y     -     1 0 0     T I M E S 
+================================================================================
+
+Loading standards as string
+Searching strings hash 100 times (benchmarked)
+Rehearsal ---------------------------------------------------------------
+Search Standards - strings:   1.950000   0.010000   1.960000 (  1.954808)
+------------------------------------------------------ total: 1.960000sec
+
+                                  user     system      total        real
+Search Standards - strings:   1.910000   0.000000   1.910000 (  1.903736)
+
+Loading standards as symbols
+Searching symbols hash 100 times (benchmarked)
+Rehearsal ---------------------------------------------------------------
+Search Standards - symbols:   1.340000   0.000000   1.340000 (  1.338900)
+------------------------------------------------------ total: 1.340000sec
+
+                                  user     system      total        real
+Search Standards - symbols:   1.270000   0.000000   1.270000 (  1.268953)
+
+Loading standards as GoogleHashDenseRubyToRuby
+Searching GoogleHashDenseRubyToRuby hash 100 times (benchmarked)
+Rehearsal ---------------------------------------------------------------------------------
+Search Standards - GoogleHashDenseRubyToRuby:   1.280000   0.000000   1.280000 (  1.284081)
+------------------------------------------------------------------------ total: 1.280000sec
+
+                                                    user     system      total        real
+Search Standards - GoogleHashDenseRubyToRuby:   1.300000   0.000000   1.300000 (  1.304627)
+
+================================================================================
+ L O A D I N G     O N C E     +     S E A R C H I N G     1 0 0     T I M E S 
+================================================================================
+Rehearsal ---------------------------------------------------------------------------------
+Search Standards - strings:                     3.020000   0.030000   3.050000 (  3.054349)
+Search Standards - symbols:                     2.100000   0.020000   2.120000 (  2.114867)
+Search Standards - GoogleHashDenseRubyToRuby:   2.290000   0.010000   2.300000 (  2.308066)
+------------------------------------------------------------------------ total: 7.470000sec
+
+                                                    user     system      total        real
+Search Standards - strings:                     3.170000   0.010000   3.180000 (  3.182142)
+Search Standards - symbols:                     1.910000   0.010000   1.920000 (  1.922336)
+Search Standards - GoogleHashDenseRubyToRuby:   2.370000   0.010000   2.380000 (  2.369550)
