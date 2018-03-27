@@ -1,5 +1,6 @@
 require 'json'
 require 'benchmark'
+require 'google_hash'
 
 # Helper function to display a section break in terminal
 def display_break(s)
@@ -211,6 +212,26 @@ Benchmark.bmbm do |bm|
       end
     end
  }
+  bm.report("Read Standards - GoogleHashDenseRubyToRuby:") {
+    20.times do |i|
+      standards_data = {}
+      standards_files.sort.each do |standards_file|
+        temp = ''
+        File.open("#{standards_data_dir}/#{standards_file}", 'r:UTF-8') do |f|
+          temp = f.read
+        end
+
+        file_hash = JSON.parse(temp, :symbolize_names=>true)
+        standards_data = standards_data.merge(file_hash)
+      end
+      s = GoogleHashDenseRubyToRuby.new
+      standards_data.each do |k, v|
+        s[k] = v
+      end
+      standards_data = s
+    end
+
+  }
 end
 
 
@@ -262,7 +283,7 @@ standards_files.sort.each do |standards_file|
   standards_data = standards_data.merge(file_hash)
 end
 
-puts "Searching strings hash 1000 times (benchmarked)\n"
+puts "Searching symbols hash 1000 times (benchmarked)\n"
 
 Benchmark.bmbm do |bm|
 
@@ -281,6 +302,47 @@ Benchmark.bmbm do |bm|
   }
 end
 
+
+# Read standards as Google hash
+puts "\nLoading standards as GoogleHashDenseRubyToRuby"
+
+
+# Read standards as symbols
+standards_data = {}
+standards_files.sort.each do |standards_file|
+  temp = ''
+  File.open("#{standards_data_dir}/#{standards_file}", 'r:UTF-8') do |f|
+    temp = f.read
+  end
+
+  file_hash = JSON.parse(temp, :symbolize_names=>true)
+  standards_data = standards_data.merge(file_hash)
+end
+# Popuplate a google hash
+s = GoogleHashDenseRubyToRuby.new
+standards_data.each do |k, v|
+  s[k] = v
+end
+standards_data = s
+
+puts "Searching GoogleHashDenseRubyToRuby hash 1000 times (benchmarked)\n"
+
+Benchmark.bmbm do |bm|
+
+  bm.report("Search Standards - GoogleHashDenseRubyToRuby:") {
+    1000.times do |i|
+
+      # populate search hash
+      search_criteria = {
+        :template => '90.1-2013',
+        :building_type => 'Office',
+        :space_type => 'ClosedOffice'
+      }
+      # Lookup
+      space_type_properties = model_find_object(standards_data[:space_types], search_criteria)
+    end
+  }
+end
 
 
 
@@ -346,4 +408,37 @@ Benchmark.bmbm do |bm|
       space_type_properties = model_find_object(standards_data[:space_types], search_criteria)
     end
   }
+
+  bm.report("Search Standards - GoogleHashDenseRubyToRuby:") {
+    # Read standards as symbols
+    standards_data = {}
+    standards_files.sort.each do |standards_file|
+      temp = ''
+      File.open("#{standards_data_dir}/#{standards_file}", 'r:UTF-8') do |f|
+        temp = f.read
+      end
+
+      file_hash = JSON.parse(temp, :symbolize_names=>true)
+      standards_data = standards_data.merge(file_hash)
+    end
+    s = GoogleHashDenseRubyToRuby.new
+    standards_data.each do |k, v|
+      s[k] = v
+    end
+    standards_data = s
+
+    # Search 1000 times
+    1000.times do |i|
+
+      # populate search hash
+      search_criteria = {
+        :template => '90.1-2013',
+        :building_type => 'Office',
+        :space_type => 'ClosedOffice'
+      }
+      # Lookup
+      space_type_properties = model_find_object(standards_data[:space_types], search_criteria)
+    end
+  }
+
 end
