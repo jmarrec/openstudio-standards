@@ -218,7 +218,7 @@ end
 ###############################################################################
 #         S E A R C H I N G     O N L Y     -     1 0 0 0     T I M E S
 ###############################################################################
-display_break("loading only - 1000 times")
+display_break("seaching only - 1000 times")
 
 puts "\nLoading standards as string"
 # Read as regular
