@@ -1,6 +1,7 @@
 require 'json'
 require 'benchmark'
 require 'google_hash'
+require 'openstudio'
 
 # Helper function to display a section break in terminal
 def display_break(s)
@@ -177,14 +178,14 @@ standards_data_dir = "#{top_dir}/data/standards"
 
 
 ###############################################################################
-#            L O A D I N G     O N L Y     -     2 0     T I M E S
+#            L O A D I N G     O N L Y     -     1 0     T I M E S
 ###############################################################################
-display_break("loading only - 20 times")
+display_break("loading only - 10 times")
 
-# Load standards 20 times, as string and as symbols
+# Load standards 10 times, as string and as symbols
 Benchmark.bmbm do |bm|
   bm.report("Read Standards - strings:") {
-    20.times do |i|
+    10.times do |i|
       standards_data = {}
       standards_files.sort.each do |standards_file|
         temp = ''
@@ -199,7 +200,7 @@ Benchmark.bmbm do |bm|
   }
 
   bm.report("Read Standards - symbols:") {
-    20.times do |i|
+    10.times do |i|
       standards_data = {}
       standards_files.sort.each do |standards_file|
         temp = ''
@@ -213,7 +214,7 @@ Benchmark.bmbm do |bm|
     end
  }
   bm.report("Read Standards - GoogleHashDenseRubyToRuby:") {
-    20.times do |i|
+    10.times do |i|
       standards_data = {}
       standards_files.sort.each do |standards_file|
         temp = ''
@@ -237,9 +238,9 @@ end
 
 
 ###############################################################################
-#         S E A R C H I N G     O N L Y     -     1 0 0 0     T I M E S
+#         S E A R C H I N G     O N L Y     -     1 0 0   T I M E S
 ###############################################################################
-display_break("seaching only - 1000 times")
+display_break("seaching only - 100 times")
 
 puts "\nLoading standards as string"
 # Read as regular
@@ -253,10 +254,10 @@ standards_files.sort.each do |standards_file|
   file_hash = JSON.parse(temp)
   standards_data = standards_data.merge(file_hash)
 end
-puts "Searching strings hash 1000 times (benchmarked)\n"
+puts "Searching strings hash 100 times (benchmarked)\n"
 Benchmark.bmbm do |bm|
   bm.report("Search Standards - strings:") {
-    1000.times do |i|
+    100.times do |i|
       # populate search hash
       search_criteria = {
         'template' => '90.1-2013',
@@ -265,6 +266,7 @@ Benchmark.bmbm do |bm|
       }
       # Lookup
       space_type_properties = model_find_object(standards_data['space_types'], search_criteria)
+      sch = model_find_object(standards_data['schedules'], {'name' =>space_type_properties['cooling_setpoint_schedule']})
     end
   }
 end
@@ -283,12 +285,12 @@ standards_files.sort.each do |standards_file|
   standards_data = standards_data.merge(file_hash)
 end
 
-puts "Searching symbols hash 1000 times (benchmarked)\n"
+puts "Searching symbols hash 100 times (benchmarked)\n"
 
 Benchmark.bmbm do |bm|
 
   bm.report("Search Standards - symbols:") {
-    1000.times do |i|
+    100.times do |i|
 
       # populate search hash
       search_criteria = {
@@ -298,6 +300,7 @@ Benchmark.bmbm do |bm|
       }
       # Lookup
       space_type_properties = model_find_object(standards_data[:space_types], search_criteria)
+      sch = model_find_object(standards_data[:schedules], {'name' =>space_type_properties[:cooling_setpoint_schedule]})
     end
   }
 end
@@ -325,12 +328,12 @@ standards_data.each do |k, v|
 end
 standards_data = s
 
-puts "Searching GoogleHashDenseRubyToRuby hash 1000 times (benchmarked)\n"
+puts "Searching GoogleHashDenseRubyToRuby hash 100 times (benchmarked)\n"
 
 Benchmark.bmbm do |bm|
 
   bm.report("Search Standards - GoogleHashDenseRubyToRuby:") {
-    1000.times do |i|
+    100.times do |i|
 
       # populate search hash
       search_criteria = {
@@ -340,6 +343,7 @@ Benchmark.bmbm do |bm|
       }
       # Lookup
       space_type_properties = model_find_object(standards_data[:space_types], search_criteria)
+      sch = model_find_object(standards_data[:schedules], {'name' =>space_type_properties[:cooling_setpoint_schedule]})
     end
   }
 end
@@ -347,9 +351,9 @@ end
 
 
 ###############################################################################
-# L O A D I N G     O N C E   +   S E A R C H I N G     1 0 0 0     T I M E S
+# L O A D I N G     O N C E   +   S E A R C H I N G     1 0 0    T I M E S
 ###############################################################################
-display_break("Loading once + searching 1000 times")
+display_break("Loading once + searching 100 times")
 
 
 Benchmark.bmbm do |bm|
@@ -368,8 +372,8 @@ Benchmark.bmbm do |bm|
       standards_data = standards_data.merge(file_hash)
     end
 
-    # Search 1000 times
-    1000.times do |i|
+    # Search 100 times
+    100.times do |i|
       # populate search hash
       search_criteria = {
         'template' => '90.1-2013',
@@ -378,6 +382,7 @@ Benchmark.bmbm do |bm|
       }
       # Lookup
       space_type_properties = model_find_object(standards_data['space_types'], search_criteria)
+      sch = model_find_object(standards_data['schedules'], {'name' =>space_type_properties['cooling_setpoint_schedule']})
     end
   }
 
@@ -395,8 +400,8 @@ Benchmark.bmbm do |bm|
       standards_data = standards_data.merge(file_hash)
     end
 
-    # Search 1000 times
-    1000.times do |i|
+    # Search 100 times
+    100.times do |i|
 
       # populate search hash
       search_criteria = {
@@ -406,6 +411,7 @@ Benchmark.bmbm do |bm|
       }
       # Lookup
       space_type_properties = model_find_object(standards_data[:space_types], search_criteria)
+      sch = model_find_object(standards_data[:schedules], {'name' =>space_type_properties[:cooling_setpoint_schedule]})
     end
   }
 
@@ -427,8 +433,8 @@ Benchmark.bmbm do |bm|
     end
     standards_data = s
 
-    # Search 1000 times
-    1000.times do |i|
+    # Search 100 times
+    100.times do |i|
 
       # populate search hash
       search_criteria = {
@@ -438,6 +444,7 @@ Benchmark.bmbm do |bm|
       }
       # Lookup
       space_type_properties = model_find_object(standards_data[:space_types], search_criteria)
+      sch = model_find_object(standards_data[:schedules], {'name' =>space_type_properties[:cooling_setpoint_schedule]})
     end
   }
 
