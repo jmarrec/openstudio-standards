@@ -5,7 +5,8 @@ class ACM179dASHRAE9012007
     building = model.getBuilding
     building_level_bt = nil
     if building.standardsBuildingType.is_initialized
-      building_level_bt = building.standardsBuildingType.get
+      building_level_bt =building.standardsBuildingType.get
+      building_level_bt = model_get_lookup_name(building_level_bt)
       OpenStudio.logFree(OpenStudio::Debug, 'openstudio.standards.Model', "found Building level standardsBuildingType = '#{building_level_bt}'")
     end
 
@@ -35,6 +36,7 @@ class ACM179dASHRAE9012007
     end
 
     space_type_level_bt = building_types.max_by { |_, v| v }.first
+    space_type_level_bt = model_get_lookup_name(space_type_level_bt)
     if !building_level_bt.nil?
       if building_level_bt != space_type_level_bt
         OpenStudio.logFree(OpenStudio::Warn, 'openstudio.standards.Model', "The Building has standardsBuildingType '#{building_level_bt}' while the area determination based on space types has '#{space_type_level_bt}'. Preferring the Space Type one")
@@ -122,6 +124,27 @@ class ACM179dASHRAE9012007
     end
 
     return sys_num
+  end
+
+
+  BT_TO_HVAC_OPERATION_SCHEDULE_NAMES = {
+    'FullServiceRestaurant' => 'Nonres_HVAC_Sch',
+    'Office' => 'Nonres_HVAC_Sch',
+    'PrimarySchool' => 'SchoolPrimary_HVAC_Sch',
+    'QuickServiceRestaurant' => 'Nonres_HVAC_Sch',
+    'Retail' => 'Retail_HVAC_Sch',
+    'SmallHotel' => 'Res_HVAC_Sch',
+    'StripMall' => 'Retail_HVAC_Sch',
+    'Warehouse' => 'Nonres_HVAC_Sch'
+  }
+
+  def hvac_operation_schedule_name(model)
+    bt = model_get_primary_building_type(model)
+    name = BT_TO_HVAC_OPERATION_SCHEDULE_NAMES[bt]
+    if name.nil?
+      raise "Building type #{bt} is not supported"
+    end
+    return name
   end
 
 end
