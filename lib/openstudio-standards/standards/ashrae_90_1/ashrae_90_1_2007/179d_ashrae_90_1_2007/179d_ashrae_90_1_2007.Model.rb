@@ -86,31 +86,24 @@ class ACM179dASHRAE9012007
   # for the baseline system.
   # @return [String] the system number: 1_or_2, 3_or_4,
   # 5_or_6, 7_or_8, 9_or_10
-  def model_prm_baseline_system_number(model, climate_zone, area_type, fuel_type, area_ft2, num_stories, custom)
+  def model_prm_baseline_system_number(_model, _climate_zone, area_type, _fuel_type, area_ft2, num_stories, custom)
+    OpenStudio.logFree(OpenStudio::Debug, 'openstudio.Model.prm', '179d: Heat Storage area applied as 90.1-2007 with addenda dn')
     sys_num = nil
-
-    # @todo refactor: figure out this weird template switching case
-    # For a custom scenario, use the lookup method from
-    # a different standard instead of the specified standard.
-    # if custom == "90.1-2007 with addenda dn"
-    # OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', 'Custom; per Addenda dn of 90.1-2007, System 10 and 11 (same as system 9 and 10 in 90.1-2010) will be used for heated only space.')
-    # template = '90.1-2010'
-    # sys_num = model_prm_baseline_system_number(model, climate_zone, area_type, fuel_type, area_ft2, num_stories, custom)
-    # return sys_num
-    # end
 
     # Set the area limit
     limit_ft2 = 25_000
 
-    # Warn about heated only
-    if area_type == 'heatedonly'
-      OpenStudio.logFree(OpenStudio::Warn, 'openstudio.standards.Model', "Per Table G3.1.10.d, '(In the proposed building) Where no cooling system exists or no cooling system has been specified, the cooling system shall be identical to the system modeled in the baseline building design.' This requires that you go back and add a cooling system to the proposed model.  This code cannot do that for you; you must do it manually.")
+    # Customization for Xcel EDA.
+    # No special retail category
+    # for regular 90.1-2010.
+    if custom != 'Xcel Energy CO EDA' && (area_type == 'retail')
+      area_type = 'nonresidential'
     end
 
     case area_type
     when 'residential'
       sys_num = '1_or_2'
-    when 'nonresidential', 'heatedonly'
+    when 'nonresidential'
       # nonresidential and 3 floors or less and <25,000 ft2
       if num_stories <= 3 && area_ft2 < limit_ft2
         sys_num = '3_or_4'
@@ -121,6 +114,11 @@ class ACM179dASHRAE9012007
       elsif num_stories >= 5 || area_ft2 > 150_000
         sys_num = '7_or_8'
       end
+    when 'heatedonly'
+      sys_num = '9_or_10'
+    when 'retail'
+      # Should only be hit by Xcel EDA
+      sys_num = '3_or_4'
     end
 
     return sys_num
