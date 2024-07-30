@@ -27,10 +27,10 @@ class Standard
 
     # add 'Multi Zone VAV with discharge dampers' and change the minimum fan power fraction of "Multi Zone VAV with VSD and Static Pressure Reset"
     when 'Multi Zone VAV with discharge dampers'
-      coeff_a = 0.18984763
-      coeff_b = 0.31447014
-      coeff_c = 0.49568211
-      coeff_d = 0.0
+      coeff_a = 0.0013
+      coeff_b = 0.1470
+      coeff_c = 0.9506
+      coeff_d = -0.0998
       min_pct_pwr = 0.25
     when 'Multi Zone VAV with VSD and SP Setpoint Reset'
       coeff_a = 0.04076
@@ -81,10 +81,10 @@ class Standard
       coeff_d = 0.9437
       min_pct_pwr = 0.1
     when 'Single Zone VAV Fan'
-      coeff_a = 0.027828
-      coeff_b = 0.026583
-      coeff_c = -0.087069
-      coeff_d = 1.030920
+      coeff_a = 0.0013
+      coeff_b = 0.147
+      coeff_c = 0.9506
+      coeff_d = -0.0998
       min_pct_pwr = 0.1
     else
       OpenStudio.logFree(OpenStudio::Warn, 'openstudio.standards.FanVariableVolume', "Fan control type '#{control_type}' not recognized, fan power coefficients will not be changed.")
