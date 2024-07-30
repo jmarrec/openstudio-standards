@@ -1,4 +1,4 @@
-class Standard
+class ACM179dASHRAE9012007
   # @!group FanVariableVolume
 
   # Modify the fan curve coefficients to reflect a specific type of control.
