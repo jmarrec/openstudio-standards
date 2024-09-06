@@ -996,7 +996,11 @@ class ACM179dASHRAE9012007
       ventilation.setFanPressureRise(pressure_rise_pa)
       ventilation.setFanTotalEfficiency(fan_total_eff)
 
+      # Add to Thermal Zone, and make sure it's first in line
+      # before the UnitHeater, so that it "sees" the load introduced
       ventilation.addToThermalZone(zone)
+      zone.setHeatingPriority(ventilation, 0)
+      zone.setCoolingPriority(ventilation, 0) # Can't hurt
 
       return unless ensure_ddy_infiltration
 
