@@ -88,12 +88,35 @@ class ACM179dASHRAE9012007
       # NOTE: 179D - Balance it up with infiltration
       if ['Restroom', 'Kitchen', 'Cafeteria'].include?(space_type.standardsSpaceType.get)
         space = thermal_zone.spaces.first
-        OpenStudio.logFree(OpenStudio::Warn, '179d.Standards.ThermalZone', "adding make up #{space_type.standardsSpaceType.get} infiltration object: thermal zone = '#{thermal_zone.nameString}' | space= '#{space.nameString}'")
-        makeup_infiltration_for_exhaust_fan = OpenStudio::Model::SpaceInfiltrationDesignFlowRate.new(thermal_zone.model)
-        makeup_infiltration_for_exhaust_fan.setName("#{zone_exhaust_fan.name} Makeup infil")
-        makeup_infiltration_for_exhaust_fan.setDesignFlowRate(maximum_flow_rate_si)
-        makeup_infiltration_for_exhaust_fan.setSpace(space)
-        makeup_infiltration_for_exhaust_fan.setSchedule(acm_fan_sch)
+
+        # check if there are any existing infiltration object defined already in the space type
+        exisiting_infil_objs = []
+        thermal_zone.model.getSpaceInfiltrationDesignFlowRates.each do |infilobj|
+          if infilobj.name.to_s.include?(space_type.standardsSpaceType.get)
+            exisiting_infil_objs.append(infilobj)
+          end
+        end
+
+        # raise error if there are multiple infiltration objects already in the space type
+        if exisiting_infil_objs.size > 1
+          OpenStudio.logFree(OpenStudio::Error, 'openstudio.Standards.ThermalZone', "there are multiple infiltration objects (#{exisiting_infil_objs.size}) in a space type (#{space_type.standardsSpaceType.get})")
+          raise "expecting one or zero infiltration objects but the space type (#{space_type.standardsSpaceType.get}) is assigned with multiple infiltration objects"
+        end
+
+        # get the only existing infitration object and schedule - dummy for now. later to use.
+        existing_infil_obj = exisiting_infil_objs.first
+        existing_infil_sch_name = space_type_get_standards_data(space_type)['infiltration_schedule']
+        existing_infil_sch_obj = model_add_schedule(space_type.model, existing_infil_sch_name)
+
+        # add makeup air infiltration object accordingly based on existing infiltration object
+        if exisiting_infil_objs.size == 0
+          OpenStudio.logFree(OpenStudio::Warn, '179d.Standards.ThermalZone', "adding make up #{space_type.standardsSpaceType.get} infiltration object: thermal zone = '#{thermal_zone.nameString}' | space= '#{space.nameString}'")
+          makeup_infiltration_for_exhaust_fan = OpenStudio::Model::SpaceInfiltrationDesignFlowRate.new(thermal_zone.model)
+          makeup_infiltration_for_exhaust_fan.setName("#{zone_exhaust_fan.name} Makeup infil")
+          makeup_infiltration_for_exhaust_fan.setDesignFlowRate(maximum_flow_rate_si)
+          makeup_infiltration_for_exhaust_fan.setSpace(space)
+          makeup_infiltration_for_exhaust_fan.setSchedule(acm_fan_sch)
+        end
 
         zone_exhaust_fan.setAvailabilitySchedule(acm_fan_sch)
         zone_exhaust_fan.setFlowFractionSchedule(acm_fan_sch)
