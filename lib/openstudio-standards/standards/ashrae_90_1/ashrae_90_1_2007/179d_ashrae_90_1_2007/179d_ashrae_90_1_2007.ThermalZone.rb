@@ -109,61 +109,66 @@ class ACM179dASHRAE9012007
           raise "expecting one or zero infiltration objects but the space type (#{space_type.standardsSpaceType.get}) is assigned with multiple infiltration objects"
         end
 
-        # get the only existing infitration object and schedule
-        existing_infil_obj = exisiting_infil_objs.first
-        existing_infil_sch_name = space_type_get_standards_data(space_type)['infiltration_schedule']
-        existing_infil_sch_obj = model_add_schedule(space_type.model, existing_infil_sch_name).to_ScheduleRuleset.get
-
-        # get infiltration design airflow method
-        existing_infil_obj_design_flow_method = existing_infil_obj.designFlowRateCalculationMethod.to_s
-
-        # get proper design flow rate depending on infiltration design airflow method
-        existing_infil_obj_design_flow_rate = nil
-        if existing_infil_obj_design_flow_method == 'Flow/ExteriorWallArea'
-          existing_infil_obj_design_flow_rate = existing_infil_obj.flowperExteriorWallArea.get.to_f # m3/s-m2
-        else
-          OpenStudio.logFree(OpenStudio::Error, 'openstudio.Standards.ThermalZone', "infiltration design flow methods other than Flow/ExteriorWallArea not supported yet for extracting design flow.")
-          raise "incompatible infiltration design flow calculation method: #{existing_infil_obj_design_flow_method}"
-        end
-
-        # get proper multiplier depending on infiltration design airflow method
-        multiplier = 0.0
-        if existing_infil_obj_design_flow_method == 'Flow/ExteriorWallArea'
-          space.surfaces.each do |surface|
-            next if surface.outsideBoundaryCondition != 'Outdoors'
-            case surface.surfaceType.to_s
-            when 'Wall'
-              multiplier += surface.netArea # m2
-            end
-          end
-        else
-          OpenStudio.logFree(OpenStudio::Error, 'openstudio.Standards.ThermalZone', "infiltration design flow methods other than Flow/ExteriorWallArea not supported yet for extracting multiplier.")
-          raise "incompatible infiltration design flow calculation method: #{existing_infil_obj_design_flow_method}"
-        end
-
-        # get 8760 schedule fraction value for exisiting infiltration object
-        timeseries_8760_sch_infil = get_8760_values_from_schedule_ruleset(space_type.model, existing_infil_sch_obj)
-
-        # get 8760 schedule fraction value for ACM fan schedule
-        timeseries_8760_sch_acm_fan = get_8760_values_from_schedule_ruleset(space_type.model, acm_fan_sch.to_ScheduleRuleset.get)
-
-        # filter 8760 fraction values of existing infiltration object only when ACM fan schedule is not zero
-        timeseries_filtered = timeseries_8760_sch_infil.zip(timeseries_8760_sch_acm_fan).select { |infil, fan| fan != 0 }.map { |infil, fan| infil }
-
-        # get the most prevalent value from filtered fraction values
-        schedule_fraction_value_prevalent = timeseries_filtered.mode[0]
-
-        # calculate adjustment to maximum_flow_rate_si when there is an existing infiltration object in the space type
+        # calculate infiltration adjustment value only if there is an existing infiltration object
         if exisiting_infil_objs.size == 0
-          delta_flow_rate_si = 0
-        else
-          delta_flow_rate_si = existing_infil_obj_design_flow_rate * multiplier * schedule_fraction_value # m3/s-m2 * m2 = m3/s
-        end
 
-        # raise error if maximum_flow_rate_si is smaller than delta_flow_rate_si
-        if maximum_flow_rate_si < delta_flow_rate_si
-          OpenStudio.logFree(OpenStudio::Error, 'openstudio.Standards.ThermalZone', "the adjustment airflow rate (#{delta_flow_rate_si.round(6)} m3/s) is lower than the exhaust fan's design flow rate (#{maximum_flow_rate_si.round(6)} m3/s)")
-          raise "expecting zone exhaust fan's design air flow rate to be higher than infiltration air flow rate"
+          delta_flow_rate_si = 0
+
+        else
+
+          # get the only existing infitration object and schedule
+          existing_infil_obj = exisiting_infil_objs.first
+          existing_infil_sch_name = space_type_get_standards_data(space_type)['infiltration_schedule']
+          existing_infil_sch_obj = model_add_schedule(space_type.model, existing_infil_sch_name).to_ScheduleRuleset.get
+
+          # get infiltration design airflow method
+          existing_infil_obj_design_flow_method = existing_infil_obj.designFlowRateCalculationMethod.to_s
+
+          # get proper design flow rate depending on infiltration design airflow method
+          existing_infil_obj_design_flow_rate = nil
+          if existing_infil_obj_design_flow_method == 'Flow/ExteriorWallArea'
+            existing_infil_obj_design_flow_rate = existing_infil_obj.flowperExteriorWallArea.get.to_f # m3/s-m2
+          else
+            OpenStudio.logFree(OpenStudio::Error, 'openstudio.Standards.ThermalZone', "infiltration design flow methods other than Flow/ExteriorWallArea not supported yet for extracting design flow.")
+            raise "incompatible infiltration design flow calculation method: #{existing_infil_obj_design_flow_method}"
+          end
+
+          # get proper multiplier depending on infiltration design airflow method
+          multiplier = 0.0
+          if existing_infil_obj_design_flow_method == 'Flow/ExteriorWallArea'
+            space.surfaces.each do |surface|
+              next if surface.outsideBoundaryCondition != 'Outdoors'
+              case surface.surfaceType.to_s
+              when 'Wall'
+                multiplier += surface.netArea # m2
+              end
+            end
+          else
+            OpenStudio.logFree(OpenStudio::Error, 'openstudio.Standards.ThermalZone', "infiltration design flow methods other than Flow/ExteriorWallArea not supported yet for extracting multiplier.")
+            raise "incompatible infiltration design flow calculation method: #{existing_infil_obj_design_flow_method}"
+          end
+
+          # get 8760 schedule fraction value for exisiting infiltration object
+          timeseries_8760_sch_infil = get_8760_values_from_schedule_ruleset(space_type.model, existing_infil_sch_obj)
+
+          # get 8760 schedule fraction value for ACM fan schedule
+          timeseries_8760_sch_acm_fan = get_8760_values_from_schedule_ruleset(space_type.model, acm_fan_sch.to_ScheduleRuleset.get)
+
+          # filter 8760 fraction values of existing infiltration object only when ACM fan schedule is not zero
+          timeseries_filtered = timeseries_8760_sch_infil.zip(timeseries_8760_sch_acm_fan).select { |infil, fan| fan != 0 }.map { |infil, fan| infil }
+
+          # get the most prevalent value (using statistical mode) from filtered fraction values
+          schedule_fraction_value_prevalent = timeseries_filtered.mode[0]
+
+          # calculate adjustment to maximum_flow_rate_si when there is an existing infiltration object in the space type
+          delta_flow_rate_si = existing_infil_obj_design_flow_rate * multiplier * schedule_fraction_value # m3/s-m2 * m2 = m3/s
+
+          # raise error if maximum_flow_rate_si is smaller than delta_flow_rate_si
+          if maximum_flow_rate_si < delta_flow_rate_si
+            OpenStudio.logFree(OpenStudio::Error, 'openstudio.Standards.ThermalZone', "the adjustment airflow rate (#{delta_flow_rate_si.round(6)} m3/s) is lower than the exhaust fan's design flow rate (#{maximum_flow_rate_si.round(6)} m3/s)")
+            raise "expecting zone exhaust fan's design air flow rate to be higher than infiltration air flow rate"
+          end
+          
         end
         # -------------------------------------------------------------------------------------
 
