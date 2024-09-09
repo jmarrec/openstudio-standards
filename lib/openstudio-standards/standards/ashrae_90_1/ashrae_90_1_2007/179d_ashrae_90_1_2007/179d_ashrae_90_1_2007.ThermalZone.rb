@@ -161,7 +161,7 @@ class ACM179dASHRAE9012007
           schedule_fraction_value_prevalent = timeseries_filtered.mode[0]
 
           # calculate adjustment to maximum_flow_rate_si when there is an existing infiltration object in the space type
-          delta_flow_rate_si = existing_infil_obj_design_flow_rate * multiplier * schedule_fraction_value # m3/s-m2 * m2 = m3/s
+          delta_flow_rate_si = existing_infil_obj_design_flow_rate * multiplier * schedule_fraction_value_prevalent # m3/s-m2 * m2 = m3/s
 
           # raise error if maximum_flow_rate_si is smaller than delta_flow_rate_si
           if maximum_flow_rate_si < delta_flow_rate_si
