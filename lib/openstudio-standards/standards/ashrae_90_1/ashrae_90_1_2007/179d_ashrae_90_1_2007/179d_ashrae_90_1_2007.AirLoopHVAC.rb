@@ -148,4 +148,58 @@ class ACM179dASHRAE9012007
     return 'Multi Zone VAV with VSD and Fixed SP Setpoint'
   end
 
+  # Adjust minimum VAV damper positions and set minimum design
+  # system outdoor air flow
+  # removed zone ventilation effectiveness correction (for multi-zone system) for 179D
+  #
+  # @param air_loop_hvac [OpenStudio::Model::AirLoopHVAC] air loop
+  # @return [Bool] returns true if required, false if not
+  # @todo Add exception logic for systems serving parking garage, warehouse, or multifamily
+  def air_loop_hvac_adjust_minimum_vav_damper_positions(air_loop_hvac)
+    # Do not apply the adjustment to some of the system in
+    # the hospital and outpatient which have their minimum
+    # damper position determined based on AIA 2001 ventilation
+    # requirements
+    if (@instvarbuilding_type == 'Hospital' && (air_loop_hvac.name.to_s.include?('VAV_ER') || air_loop_hvac.name.to_s.include?('VAV_ICU') ||
+                                                air_loop_hvac.name.to_s.include?('VAV_OR') || air_loop_hvac.name.to_s.include?('VAV_LABS') ||
+                                                air_loop_hvac.name.to_s.include?('VAV_PATRMS'))) ||
+       (@instvarbuilding_type == 'Outpatient' && air_loop_hvac.name.to_s.include?('Outpatient F1'))
+
+      return true
+    end
+
+    # Total uncorrected outdoor airflow rate
+    v_ou = 0.0
+    air_loop_hvac.thermalZones.each do |zone|
+      # Vou is the system uncorrected outdoor airflow:
+      # Zone airflow is multiplied by the zone multiplier
+      v_ou += thermal_zone_outdoor_airflow_rate(zone) * zone.multiplier.to_f
+    end
+
+    v_ou_cfm = OpenStudio.convert(v_ou, 'm^3/s', 'cfm').get
+
+    # System primary airflow rate (whether autosized or hard-sized)
+    v_ps = 0.0
+
+    v_ps = if air_loop_hvac.designSupplyAirFlowRate.is_initialized
+             air_loop_hvac.designSupplyAirFlowRate.get
+           elsif air_loop_hvac.autosizedDesignSupplyAirFlowRate.is_initialized
+             air_loop_hvac.autosizedDesignSupplyAirFlowRate.get
+           end
+    v_ps_cfm = OpenStudio.convert(v_ps, 'm^3/s', 'cfm').get
+
+    # Average outdoor air fraction
+    x_s = v_ou / v_ps
+
+    OpenStudio.logFree(OpenStudio::Debug, 'openstudio.standards.AirLoopHVAC', "For #{air_loop_hvac.name}: v_ou = #{v_ou_cfm.round} cfm, v_ps = #{v_ps_cfm.round} cfm, x_s = #{x_s.round(2)}.")
+
+    # Hard-size the sizing:system
+    # object with the calculated min OA flow rate
+    sizing_system = air_loop_hvac.sizingSystem
+    sizing_system.setDesignOutdoorAirFlowRate(v_ou)
+    sizing_system.setSystemOutdoorAirMethod('ZoneSum')
+
+    return true
+  end
+
 end
