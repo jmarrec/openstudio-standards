@@ -717,7 +717,11 @@ class ACM179dASHRAE9012007
 
       # If there are any multi-zone systems, reset damper positions to achieve a 60% ventilation effectiveness minimum for the system
       # following the ventilation rate procedure from 62.1
-      model_apply_multizone_vav_outdoor_air_sizing(model)
+      if baseline_179d
+        OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', '*** SKIP Baseline Multi-Zone VAV Outdoor Air Sizing ***')
+      else
+        model_apply_multizone_vav_outdoor_air_sizing(model)
+      end
 
       # Set the baseline fan power for all air loops
       model.getAirLoopHVACs.sort.each do |air_loop|
