@@ -752,19 +752,21 @@ class ACM179dASHRAE9012007
 
           total_oa_design_flow_rate += oa_design_flow_rate
 
-          new_oa = 0.0
+          # Calculate new_oa using the same logic as reporting_179_d measure
+          # This calculates both controller minimum and design supply flow rates
+          # and uses the maximum of the two values
+          new_oa = calculate_proposed_oa_flow_rate(air_loop_hvac)
 
-          air_loop_hvac.thermalZones.each do |zone|
-            dsoa_multiplier = zone.additionalProperties.hasFeature(zone_dsoa_multiplier_feature) ? zone.additionalProperties.getFeatureAsDouble(zone_dsoa_multiplier_feature).get : 1.0
-            new_oa += zone_dsoas[zone.nameString] * dsoa_multiplier
-          end
-
-          if oa_design_flow_rate < new_oa
-            msg = "BASELINE: OA design flow rate (#{oa_design_flow_rate.round(2)}) is less than the total DSOA-adjusted from proposed multipliers (#{new_oa.round(2)}) for air loop hvac '#{air_loop_hvac.nameString}'. Adjusting SizingSystem::designOutdoorAirFlowRate to match the DSOA-adjusted total."
+          if (oa_design_flow_rate - new_oa).abs > new_oa * 0.05
+            if oa_design_flow_rate < new_oa
+              msg = "BASELINE: OA design flow rate (#{oa_design_flow_rate.round(2)}) is less than the proposed OA flow rate (#{new_oa.round(2)}) for air loop hvac '#{air_loop_hvac.nameString}'. Adjusting SizingSystem::designOutdoorAirFlowRate to match the proposed OA flow rate."
+            else
+              msg = "BASELINE: OA design flow rate (#{oa_design_flow_rate.round(2)}) is greater than the proposed OA flow rate (#{new_oa.round(2)}) for air loop hvac '#{air_loop_hvac.nameString}'. Adjusting SizingSystem::designOutdoorAirFlowRate to match the proposed OA flow rate."
+            end
             OpenStudio.logFree(OpenStudio::Warn, 'openstudio.standards.Model', msg)
             sizing_system.setDesignOutdoorAirFlowRate(new_oa)
             if controller_oa.isMinimumOutdoorAirFlowRateAutosized
-              msg = "BASELINE: For air loop hvac '#{air_loop_hvac.nameString}', adjusting ControllerOutdoorAir::autosizedMinimumOutdoorAirFlowRate to match the DSOA-adjusted total."
+              msg = "BASELINE: For air loop hvac '#{air_loop_hvac.nameString}', adjusting ControllerOutdoorAir::autosizedMinimumOutdoorAirFlowRate to match the proposed OA flow rate."
               controller_oa.setMinimumOutdoorAirFlowRate(new_oa)
             end
           end
@@ -1474,4 +1476,76 @@ class ACM179dASHRAE9012007
     end
   end
 
+    # Calculate the proposed OA flow rate using the same logic as reporting_179_d measure
+  # This calculates both controller minimum and design supply flow rates
+  # and uses the maximum of the two values
+  #
+  # @param air_loop_hvac [OpenStudio::Model::AirLoopHVAC] air loop to calculate OA flow rate for
+  # @return [Float] maximum OA flow rate between controller minimum and design supply
+  def calculate_proposed_oa_flow_rate(air_loop_hvac)
+    # Initialize values
+    controller_minimum_oa_flow_rate = 0.0
+    design_supply_oa_flow_rate = 0.0
+
+    # Skip if no outdoor air system
+    return 0.0 if air_loop_hvac.airLoopHVACOutdoorAirSystem.empty?
+
+    # Get the outdoor air system and controller
+    air_loop_hvac_oasys = air_loop_hvac.airLoopHVACOutdoorAirSystem.get
+    controller_oa = air_loop_hvac_oasys.getControllerOutdoorAir
+    controller_mv = controller_oa.controllerMechanicalVentilation
+
+    # Calculate controller minimum outdoor air flow rate
+    # This matches the logic in reporting_179_d measure lines 737-749
+    if controller_oa.autosizedMinimumOutdoorAirFlowRate.is_initialized
+      controller_minimum_oa_flow_rate = controller_oa.autosizedMinimumOutdoorAirFlowRate.get
+    elsif controller_oa.minimumOutdoorAirFlowRate.is_initialized
+      controller_minimum_oa_flow_rate = controller_oa.minimumOutdoorAirFlowRate.get
+    elsif controller_oa.isMinimumOutdoorAirFlowRateAutosized && controller_mv.demandControlledVentilation
+      # OS SDK FT will write this as 0.0, hence why it's not retrievable from the SQL
+      controller_minimum_oa_flow_rate = 0.0
+    else
+      controller_minimum_oa_flow_rate = 0.0
+    end
+
+    # Calculate design outdoor air supply flow rate
+    # This matches the logic in reporting_179_d measure lines 724-731
+    sizing_system = air_loop_hvac.sizingSystem
+    if sizing_system.designOutdoorAirFlowRate.is_initialized
+      design_supply_oa_flow_rate = sizing_system.designOutdoorAirFlowRate.get
+    else
+      design_supply_oa_flow_rate = 0.0
+    end
+
+    # Also include zone HVAC systems outdoor air flow rates
+    # This matches the logic in reporting_179_d measure lines 909-924
+    air_loop_hvac.thermalZones.each do |zone|
+      zone.equipment.each do |equipment|
+        # Check for zone HVAC equipment with outdoor air
+        if equipment.to_ZoneHVACPackagedTerminalAirConditioner.is_initialized
+          zone_hvac = equipment.to_ZoneHVACPackagedTerminalAirConditioner.get
+          # Use cooling outdoor air flow rate as it should be the same as heating
+          if zone_hvac.outdoorAirFlowRateDuringCoolingOperation.is_initialized
+            design_supply_oa_flow_rate += zone_hvac.outdoorAirFlowRateDuringCoolingOperation.get
+          elsif zone_hvac.autosizedCoolingOutdoorAirFlowRate.is_initialized
+            design_supply_oa_flow_rate += zone_hvac.autosizedCoolingOutdoorAirFlowRate.get
+          end
+        elsif equipment.to_ZoneHVACPackagedTerminalHeatPump.is_initialized
+          zone_hvac = equipment.to_ZoneHVACPackagedTerminalHeatPump.get
+          if zone_hvac.outdoorAirFlowRateDuringCoolingOperation.is_initialized
+            design_supply_oa_flow_rate += zone_hvac.outdoorAirFlowRateDuringCoolingOperation.get
+          elsif zone_hvac.autosizedCoolingOutdoorAirFlowRate.is_initialized
+            design_supply_oa_flow_rate += zone_hvac.autosizedCoolingOutdoorAirFlowRate.get
+          end
+        end
+        # Add more zone HVAC types as needed
+      end
+    end
+
+    # Return the maximum of the two values
+    # This ensures we use the higher outdoor air requirement
+    proposed_oa_flow_rate = [controller_minimum_oa_flow_rate, design_supply_oa_flow_rate].max
+
+    return proposed_oa_flow_rate
+  end
 end
