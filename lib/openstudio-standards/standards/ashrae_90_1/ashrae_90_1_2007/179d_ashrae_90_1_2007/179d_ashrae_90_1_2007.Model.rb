@@ -309,6 +309,8 @@ class ACM179dASHRAE9012007
   # @param debug [Boolean] If true, will report out more detailed debugging output
   # @return [Bool] returns true if successful, false if not
   def model_create_prm_any_baseline_building(user_model, building_type, climate_zone, hvac_building_type = 'All others', wwr_building_type = 'All others', swh_building_type = 'All others', model_deep_copy = false, custom = nil, sizing_run_dir = Dir.pwd, run_all_orients = false, unmet_load_hours_check = true, debug = false, baseline_179d = true)
+    puts "DEBUG: ===== ENTERING model_create_prm_any_baseline_building ====="
+    puts "DEBUG: baseline_179d = #{baseline_179d}"
     args = {
       # "user_model"   => user_model,
       'building_type' => building_type,
@@ -559,8 +561,46 @@ class ACM179dASHRAE9012007
 
         # NOTE: 179D addition
         # Should probably just store a HASH instead of using additionalProperties...
+        puts "*** DEBUG PUTS: About to store zone DSOA data ***"
         zone_dsoas = model.getThermalZones.map { |zone| [zone.nameString, thermal_zone_outdoor_airflow_rate(zone) *  zone.multiplier.to_f] }.to_h
         mark_zone_dsoa_multiplier(model)
+        
+        # Store the total proposed building OA flow rate for later adjustment
+        # Use air loop level calculation to match test method
+        total_proposed_building_oa = 0.0
+        model.getAirLoopHVACs.each do |air_loop|
+          # Skip if no outdoor air system
+          next if air_loop.airLoopHVACOutdoorAirSystem.empty?
+
+          # Get the outdoor air system and controller
+          air_loop_hvac_oasys = air_loop.airLoopHVACOutdoorAirSystem.get
+          controller_oa = air_loop_hvac_oasys.getControllerOutdoorAir
+
+          # Calculate controller minimum outdoor air flow rate
+          controller_minimum_oa_flow_rate = 0.0
+          if controller_oa.minimumOutdoorAirFlowRate.is_initialized
+            controller_minimum_oa_flow_rate = controller_oa.minimumOutdoorAirFlowRate.get
+          elsif controller_oa.autosizedMinimumOutdoorAirFlowRate.is_initialized
+            controller_minimum_oa_flow_rate = controller_oa.autosizedMinimumOutdoorAirFlowRate.get
+          end
+
+          # Calculate design outdoor air supply flow rate
+          design_supply_oa_flow_rate = 0.0
+          sizing_system = air_loop.sizingSystem
+          if sizing_system.designOutdoorAirFlowRate.is_initialized
+            design_supply_oa_flow_rate = sizing_system.designOutdoorAirFlowRate.get
+          elsif sizing_system.autosizedDesignOutdoorAirFlowRate.is_initialized
+            design_supply_oa_flow_rate = sizing_system.autosizedDesignOutdoorAirFlowRate.get
+          end
+
+          # Use the maximum of the two values for this air loop
+          air_loop_oa_flow_rate = [controller_minimum_oa_flow_rate, design_supply_oa_flow_rate].max
+          total_proposed_building_oa += air_loop_oa_flow_rate
+        end
+        
+        puts "*** DEBUG PUTS: Storing total proposed building OA: #{total_proposed_building_oa.round(3)} m³/s ***"
+        model.getBuilding.additionalProperties.setFeature('total_proposed_building_oa_m3_per_s', total_proposed_building_oa.to_s)
+        OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "Stored total proposed building OA flow rate: #{total_proposed_building_oa.round(3)} m³/s")
       end
 
       # Remove all HVAC from model, excluding service water heating
@@ -708,6 +748,209 @@ class ACM179dASHRAE9012007
         next if plant_loop_swh_loop?(plant_loop)
 
         plant_loop_apply_prm_baseline_temperatures(plant_loop)
+      end
+      
+      OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', '*** DEBUG: Reached OA adjustment section ***')
+      puts "*** DEBUG PUTS: Reached OA adjustment section ***"
+      
+      # Adjust outdoor air flow rates to match proposed building OA flow rate
+      if baseline_179d
+        OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', '*** Checking for OA Adjustment ***')
+        puts "*** DEBUG PUTS: Checking for OA Adjustment ***"
+        if model.getBuilding.additionalProperties.hasFeature('total_proposed_building_oa_m3_per_s')
+          puts "*** DEBUG PUTS: Found stored proposed OA data ***"
+          OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', '*** Adjusting Building OA Flow Rate to Match Proposed Building ***')
+          
+          total_proposed_oa = model.getBuilding.additionalProperties.getFeatureAsString('total_proposed_building_oa_m3_per_s').get.to_f
+          puts "*** DEBUG PUTS: Retrieved stored proposed OA: #{total_proposed_oa.round(3)} m³/s ***"
+          
+          # First, try to adjust air loop level OA flow rates (for systems with air loops)
+          air_loops = model.getAirLoopHVACs
+          if !air_loops.empty?
+            puts "*** DEBUG PUTS: Found #{air_loops.size} air loops - using air loop level adjustment ***"
+            OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "Found #{air_loops.size} air loops - adjusting air loop OA flow rates directly")
+            
+            # Calculate current total air loop OA flow rate
+            current_total_air_loop_oa = 0.0
+            air_loops.each do |air_loop|
+              next if air_loop.airLoopHVACOutdoorAirSystem.empty?
+              
+              oa_system = air_loop.airLoopHVACOutdoorAirSystem.get
+              controller_oa = oa_system.getControllerOutdoorAir
+              sizing_system = air_loop.sizingSystem
+              
+              # Get current OA flow rate for this air loop
+              air_loop_oa = 0.0
+              if controller_oa.minimumOutdoorAirFlowRate.is_initialized
+                air_loop_oa = controller_oa.minimumOutdoorAirFlowRate.get
+              elsif sizing_system.designOutdoorAirFlowRate.is_initialized
+                air_loop_oa = sizing_system.designOutdoorAirFlowRate.get
+              end
+              
+              current_total_air_loop_oa += air_loop_oa
+            end
+            
+            puts "*** DEBUG PUTS: Current total air loop OA: #{current_total_air_loop_oa.round(3)} m³/s ***"
+            
+            # Check if adjustment is needed (more than 5% difference)
+            if total_proposed_oa > 0 && (current_total_air_loop_oa - total_proposed_oa).abs > total_proposed_oa * 0.05
+              diff_pct = ((current_total_air_loop_oa - total_proposed_oa).abs / total_proposed_oa) * 100
+              puts "*** DEBUG PUTS: Air loop OA difference is #{diff_pct.round(2)}% ***"
+              OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "Air loop OA difference is #{diff_pct.round(2)}%, adjusting air loop OA flow rates")
+              
+              # Handle two cases: proportional adjustment vs. distribution from zero
+              if current_total_air_loop_oa > 0
+                # Case 1: Proportional adjustment when baseline already has OA flow rates
+                adjustment_factor = total_proposed_oa / current_total_air_loop_oa
+                puts "*** DEBUG PUTS: Using proportional adjustment factor: #{adjustment_factor.round(4)} ***"
+                
+                # Apply proportional adjustment to each air loop
+                air_loops.each do |air_loop|
+                  next if air_loop.airLoopHVACOutdoorAirSystem.empty?
+                  
+                  oa_system = air_loop.airLoopHVACOutdoorAirSystem.get
+                  controller_oa = oa_system.getControllerOutdoorAir
+                  sizing_system = air_loop.sizingSystem
+                  
+                  # Get current OA flow rate for this air loop
+                  current_air_loop_oa = 0.0
+                  if controller_oa.minimumOutdoorAirFlowRate.is_initialized
+                    current_air_loop_oa = controller_oa.minimumOutdoorAirFlowRate.get
+                  elsif sizing_system.designOutdoorAirFlowRate.is_initialized
+                    current_air_loop_oa = sizing_system.designOutdoorAirFlowRate.get
+                  end
+                  
+                  # Calculate new OA flow rate for this air loop
+                  new_air_loop_oa = current_air_loop_oa * adjustment_factor
+                  
+                  # Set the new values - ensure maximum is at least equal to minimum to avoid EnergyPlus constraint violations
+                  sizing_system.setDesignOutdoorAirFlowRate(new_air_loop_oa)
+                  controller_oa.setMinimumOutdoorAirFlowRate(new_air_loop_oa)
+                  # Set maximum to be at least equal to minimum to satisfy EnergyPlus constraints
+                  if controller_oa.maximumOutdoorAirFlowRate.is_initialized
+                    current_max = controller_oa.maximumOutdoorAirFlowRate.get
+                    if current_max < new_air_loop_oa
+                      controller_oa.setMaximumOutdoorAirFlowRate(new_air_loop_oa)
+                    end
+                  else
+                    controller_oa.setMaximumOutdoorAirFlowRate(new_air_loop_oa)
+                  end
+                  
+                  OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', 
+                    "Proportionally adjusted air loop '#{air_loop.nameString}': OA rate #{current_air_loop_oa.round(3)} -> #{new_air_loop_oa.round(3)} m³/s")
+                end
+              
+                OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "Applied proportional OA adjustment factor: #{adjustment_factor.round(4)}")
+              else
+                # Case 2: Distribute total proposed OA across air loops based on floor area when baseline OA is zero
+                puts "*** DEBUG PUTS: Baseline OA is zero - distributing total proposed OA based on floor area ***"
+                
+                # Calculate total floor area served by all air loops
+                total_floor_area_served = 0.0
+                air_loop_floor_areas = {}
+                air_loops.each do |air_loop|
+                  next if air_loop.airLoopHVACOutdoorAirSystem.empty?
+                  
+                  air_loop_floor_area = 0.0
+                  air_loop.thermalZones.each do |zone|
+                    air_loop_floor_area += zone.floorArea
+                  end
+                  air_loop_floor_areas[air_loop] = air_loop_floor_area
+                  total_floor_area_served += air_loop_floor_area
+                end
+                
+                puts "*** DEBUG PUTS: Total floor area served by air loops: #{total_floor_area_served.round(2)} m² ***"
+                
+                # Distribute OA flow rate proportionally by floor area
+                air_loops.each do |air_loop|
+                  next if air_loop.airLoopHVACOutdoorAirSystem.empty?
+                  
+                  oa_system = air_loop.airLoopHVACOutdoorAirSystem.get
+                  controller_oa = oa_system.getControllerOutdoorAir
+                  sizing_system = air_loop.sizingSystem
+                  
+                  # Calculate OA flow rate for this air loop based on floor area proportion
+                  air_loop_floor_area = air_loop_floor_areas[air_loop]
+                  if total_floor_area_served > 0
+                    new_air_loop_oa = total_proposed_oa * (air_loop_floor_area / total_floor_area_served)
+                  else
+                    # Fallback: distribute equally across air loops
+                    new_air_loop_oa = total_proposed_oa / air_loops.size
+                  end
+                  
+                  # Set the new values - ensure maximum is at least equal to minimum to avoid EnergyPlus constraint violations
+                  sizing_system.setDesignOutdoorAirFlowRate(new_air_loop_oa)
+                  controller_oa.setMinimumOutdoorAirFlowRate(new_air_loop_oa)
+                  # Set maximum to be at least equal to minimum to satisfy EnergyPlus constraints
+                  if controller_oa.maximumOutdoorAirFlowRate.is_initialized
+                    current_max = controller_oa.maximumOutdoorAirFlowRate.get
+                    if current_max < new_air_loop_oa
+                      controller_oa.setMaximumOutdoorAirFlowRate(new_air_loop_oa)
+                    end
+                  else
+                    controller_oa.setMaximumOutdoorAirFlowRate(new_air_loop_oa)
+                  end
+                  
+                  OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', 
+                    "Distributed OA to air loop '#{air_loop.nameString}': floor area #{air_loop_floor_area.round(2)} m² -> OA rate #{new_air_loop_oa.round(3)} m³/s")
+                end
+                
+                puts "*** DEBUG PUTS: Completed OA distribution based on floor area ***"
+                OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "Applied floor area-based OA distribution: #{total_proposed_oa.round(3)} m³/s total distributed")
+              end
+            else
+              OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "No air loop OA adjustment needed - difference is within 5% tolerance")
+            end
+          else
+            puts "*** DEBUG PUTS: No air loops found - using zone DSOA adjustment ***"
+            OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "No air loops found - falling back to zone DSOA adjustment")
+            
+            # Fall back to zone DSOA adjustment for systems without air loops
+            # Calculate current baseline building OA flow rate from zone DSOA objects
+            current_baseline_oa = 0.0
+            model.getThermalZones.each do |zone|
+              current_baseline_oa += thermal_zone_outdoor_airflow_rate(zone) * zone.multiplier.to_f
+            end
+            
+            puts "*** DEBUG PUTS: Current baseline DSOA OA: #{current_baseline_oa.round(3)} m³/s ***"
+            
+            # Check if adjustment is needed (more than 5% difference)
+            if total_proposed_oa > 0 && (current_baseline_oa - total_proposed_oa).abs > total_proposed_oa * 0.05
+              diff_pct = ((current_baseline_oa - total_proposed_oa).abs / total_proposed_oa) * 100
+              puts "*** DEBUG PUTS: DSOA OA difference is #{diff_pct.round(2)}% ***"
+              OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "DSOA OA difference is #{diff_pct.round(2)}%, adjusting zone DSOA objects")
+              
+              # Calculate the OA flow rate difference and distribute by floor area
+              oa_flow_difference = total_proposed_oa - current_baseline_oa  # m³/s
+              total_floor_area = model.getBuilding.floorArea  # m²
+              oa_adjustment_per_area = total_floor_area > 0 ? oa_flow_difference / total_floor_area : 0.0  # m³/s per m²
+              
+              puts "*** DEBUG PUTS: DSOA adjustment per floor area: #{oa_adjustment_per_area.round(6)} m³/s·m² ***"
+              
+              # Adjust the area component of DSOA objects for each space
+              model.getSpaces.each do |space|
+                next if space.designSpecificationOutdoorAir.empty?
+                
+                dsoa = space.designSpecificationOutdoorAir.get
+                current_area_rate = dsoa.outdoorAirFlowperFloorArea
+                new_area_rate = current_area_rate + oa_adjustment_per_area
+                dsoa.setOutdoorAirFlowperFloorArea(new_area_rate)
+                
+                OpenStudio.logFree(OpenStudio::Debug, 'openstudio.standards.Model', 
+                  "Adjusted DSOA for space '#{space.nameString}': area rate #{current_area_rate.round(6)} -> #{new_area_rate.round(6)} m³/s·m²")
+              end
+              
+              OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "Applied DSOA adjustment of #{oa_adjustment_per_area.round(6)} m³/s·m² to all space DSOA area components")
+            else
+              OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "No DSOA adjustment needed - difference is within 5% tolerance")
+            end
+          end
+        else
+          OpenStudio.logFree(OpenStudio::Warn, 'openstudio.standards.Model', "*** No stored proposed building OA flow rate found - OA adjustment skipped ***")
+          puts "*** DEBUG PUTS: No stored proposed building OA flow rate found ***"
+        end
+      else
+        OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', '*** DEBUG: baseline_179d is false ***')
       end
 
       # Run sizing run with the HVAC equipment
