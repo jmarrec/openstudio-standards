@@ -764,21 +764,33 @@ class ACM179dASHRAE9012007
             # Calculate current total air loop OA flow rate
             current_total_air_loop_oa = 0.0
             air_loops.each do |air_loop|
+              # Skip if no outdoor air system
               next if air_loop.airLoopHVACOutdoorAirSystem.empty?
-              
-              oa_system = air_loop.airLoopHVACOutdoorAirSystem.get
-              controller_oa = oa_system.getControllerOutdoorAir
-              sizing_system = air_loop.sizingSystem
-              
-              # Get current OA flow rate for this air loop
-              air_loop_oa = 0.0
+
+              # Get the outdoor air system and controller
+              air_loop_hvac_oasys = air_loop.airLoopHVACOutdoorAirSystem.get
+              controller_oa = air_loop_hvac_oasys.getControllerOutdoorAir
+
+              # Calculate controller minimum outdoor air flow rate
+              controller_minimum_oa_flow_rate = 0.0
               if controller_oa.minimumOutdoorAirFlowRate.is_initialized
-                air_loop_oa = controller_oa.minimumOutdoorAirFlowRate.get
-              elsif sizing_system.designOutdoorAirFlowRate.is_initialized
-                air_loop_oa = sizing_system.designOutdoorAirFlowRate.get
+                controller_minimum_oa_flow_rate = controller_oa.minimumOutdoorAirFlowRate.get
+              elsif controller_oa.autosizedMinimumOutdoorAirFlowRate.is_initialized
+                controller_minimum_oa_flow_rate = controller_oa.autosizedMinimumOutdoorAirFlowRate.get
               end
-              
-              current_total_air_loop_oa += air_loop_oa
+
+              # Calculate design outdoor air supply flow rate
+              design_supply_oa_flow_rate = 0.0
+              sizing_system = air_loop.sizingSystem
+              if sizing_system.designOutdoorAirFlowRate.is_initialized
+                design_supply_oa_flow_rate = sizing_system.designOutdoorAirFlowRate.get
+              elsif sizing_system.autosizedDesignOutdoorAirFlowRate.is_initialized
+                design_supply_oa_flow_rate = sizing_system.autosizedDesignOutdoorAirFlowRate.get
+              end
+
+              # Use the maximum of the two values for this air loop
+              air_loop_oa_flow_rate = [controller_minimum_oa_flow_rate, design_supply_oa_flow_rate].max
+              current_total_air_loop_oa += air_loop_oa_flow_rate
             end
                         
             # Check if adjustment is needed (more than 5% difference)
