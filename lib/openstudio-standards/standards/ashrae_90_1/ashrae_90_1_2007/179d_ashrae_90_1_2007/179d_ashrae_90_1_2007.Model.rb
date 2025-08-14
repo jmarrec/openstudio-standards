@@ -923,7 +923,7 @@ class ACM179dASHRAE9012007
             end
           end
         else
-          OpenStudio.logFree(OpenStudio::Warn, 'openstudio.standards.Model', "*** No stored proposed building OA flow rate found - OA adjustment skipped ***")
+          OpenStudio.logFree(OpenStudio::Error, 'openstudio.standards.Model', "*** No stored proposed building OA flow rate found - OA adjustment skipped ***")
         end
       else
         OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', '*** DEBUG: baseline_179d is false ***')
