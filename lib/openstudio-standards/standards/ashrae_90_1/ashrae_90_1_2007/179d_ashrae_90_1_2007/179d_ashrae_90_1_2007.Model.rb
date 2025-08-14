@@ -869,7 +869,7 @@ class ACM179dASHRAE9012007
                   if controller_oa.maximumOutdoorAirFlowRate.is_initialized
                     current_max = controller_oa.maximumOutdoorAirFlowRate.get
                     if current_max < new_air_loop_oa
-                      controller_oa.setMaximumOutdoorAirFlowRate(new_air_loop_oa)
+                      OpenStudio.logFree(OpenStudio::Error, 'openstudio.standards.Model', "*** Maximum OA flow rate for air loop '#{air_loop.nameString}' is less than proposed value: #{current_max.round(3)} m³/s < #{new_air_loop_oa.round(3)} m³/s ***")
                     end
                   else
                     controller_oa.setMaximumOutdoorAirFlowRate(new_air_loop_oa)
