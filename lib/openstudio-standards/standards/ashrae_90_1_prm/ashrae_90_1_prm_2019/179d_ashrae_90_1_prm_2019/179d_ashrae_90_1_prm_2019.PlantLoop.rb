@@ -1,4 +1,4 @@
-class ACM179dASHRAE9012007
+class ACM179dASHRAE901PRM2019
   # @!group PlantLoop
 
   # Applies the chilled water pumping controls to the loop based on Appendix G.

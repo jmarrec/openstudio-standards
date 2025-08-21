@@ -1,4 +1,4 @@
-class ACM179dASHRAE9012007
+class ACM179dASHRAE901PRM2019
   # @!group AirTerminalSingleDuctVAVReheat
 
   # Set the minimum damper position based on OA rate of the space and the template.

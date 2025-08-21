@@ -1,4 +1,4 @@
-class ACM179dASHRAE9012007
+class ACM179dASHRAE901PRM2019
 
   # Add Exhaust Fans based on space type lookup.
   # This measure doesn't look if DCV is needed.

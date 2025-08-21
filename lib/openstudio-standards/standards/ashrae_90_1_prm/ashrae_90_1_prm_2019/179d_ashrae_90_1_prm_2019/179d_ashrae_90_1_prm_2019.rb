@@ -1,19 +1,19 @@
-# This class holds methods that apply a version of ASHRAE 90.1-2007 that has
+# This class holds methods that apply a version of ASHRAE 90.1-PRM-2019 that has
 # been modified to suit 179D needs
-# @ref [References::ASHRAE9012007]
-class ACM179dASHRAE9012007 < ASHRAE9012007
-  register_standard '179D 90.1-2007'
+# @ref [References::ASHRAE901PRM2019]
+class ACM179dASHRAE901PRM2019 < ASHRAE901PRM2019
+  register_standard '179D 90.1-PRM-2019'
   attr_reader :template, :whole_building_space_type_name
 
   def initialize
     # Lazy load the patch
-    require_relative '179d_ashrae_90_1_2007.Siz.HeatingCoolingFuels'
-    @template = '179d-90.1-2007'
+    require_relative '179d_ashrae_90_1_prm_2019.Siz.HeatingCoolingFuels'
+    @template = '179d-90.1-PRM-2019'
     load_standards_database
 
     # This is super weird, but this is for resolving ventilation and exhaust
     # per the space type's... and merging with the rest
-    @std_2007 = ASHRAE9012007.new
+    @std_prm_2019 = ASHRAE901PRM2019.new
   end
 
   def almost_equal?(value_actual, value_expected, epsilon = 0.01)
@@ -22,14 +22,14 @@ class ACM179dASHRAE9012007 < ASHRAE9012007
 
   # Loads the openstudio standards dataset for this standard.
   #
-  # It will load ASHRAE90.1-2007, and do the following:
+  # It will load ASHRAE 90.1-PRM-2019, and do the following:
   # * space_types: overwritten completely
-  # * schedules: are added onto the ASHRAE90.1-2007 ones
+  # * schedules: are added onto the ASHRAE 90.1-PRM-2019 ones
   #
   # @param data_directories [Array<String>] array of file paths that contain standards data
   # @return [Hash] a hash of standards data
   def load_standards_database(data_directories = [])
-    # Load ASHRAE 90.1-2007 data
+    # Load ASHRAE ASHRAE 90.1-PRM-2019 data
     super(data_directories)
     # And patch in our own
     OpenStudio.logFree(OpenStudio::Debug, 'openstudio.standards.standard', "Extending with JSON files from #{__dir__}")
@@ -56,8 +56,10 @@ class ACM179dASHRAE9012007 < ASHRAE9012007
       end
     end
 
-    # override values in 90.1-2007 jsons that are no longer correct compared to the latest 90.1-2007
+    # TODO: maybe not needed anymore?
+    # override values in 90.1-PRM-2019 jsons that are no longer correct compared to the latest 90.1-PRM-2019
     # packaged ac units
+    # unitary_acs only has ["PTAC", "Split-system and single package"]
     @standards_data['unitary_acs'].each do |info|
       if info['cooling_type'] == 'AirCooled' &&
          info['heating_type'] == 'All Other' &&

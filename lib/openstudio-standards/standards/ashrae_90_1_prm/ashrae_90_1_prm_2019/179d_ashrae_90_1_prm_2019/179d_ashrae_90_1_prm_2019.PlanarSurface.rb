@@ -1,11 +1,11 @@
-class ACM179dASHRAE9012007
+class ACM179dASHRAE901PRM2019
   # @!group PlanarSurface
 
   # If construction properties can be found based on the template,
   # the standards intended surface type, the standards construction type,
   # the climate zone, and the occupancy type,
   # create a construction that meets those properties and assign it to this surface.
-  # 179D 90.1-2007
+  # 179D 90.1-PRM-2019
   #
   # @param planar_surface [OpenStudio::Model:PlanarSurface] surface object
   # @param climate_zone [String] ASHRAE climate zone, e.g. 'ASHRAE 169-2013-4A'

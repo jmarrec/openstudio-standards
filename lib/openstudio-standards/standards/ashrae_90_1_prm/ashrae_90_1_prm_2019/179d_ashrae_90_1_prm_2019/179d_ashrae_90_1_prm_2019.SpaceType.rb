@@ -1,4 +1,4 @@
-class ACM179dASHRAE9012007
+class ACM179dASHRAE901PRM2019
   # @!group SpaceType
 
   OFFICE_SPACE_TYPES_NAMES_MAP = {
@@ -22,23 +22,23 @@ class ACM179dASHRAE9012007
   # This will check the building primary type instead
   #
   # @param space_type [OpenStudio::Model::SpaceType] space type object
-  # @param extend_with_2007 [default True] whether to add anything we do not
-  #        define (ventilation, exhaust, lighting control) from ASHRAE9012007
+  # @param extend_with_2019 [default True] whether to add anything we do not
+  #        define (ventilation, exhaust, lighting control) from ASHRAE901PRM2019
   # @return [hash] hash of internal loads for different load types
-  def space_type_get_standards_data(space_type, extend_with_2007: true, throw_if_not_found: false)
+  def space_type_get_standards_data(space_type, extend_with_2019: true, throw_if_not_found: false)
     space_type_properties = model_get_standards_data(space_type.model, throw_if_not_found: throw_if_not_found)
 
-    if !extend_with_2007
+    if !extend_with_2019
       return space_type_properties
     end
 
     # This merges the ventilation, exhaust and lighting controls
-    data2007 = @std_2007.space_type_get_standards_data(space_type)
-    if data2007.nil?
-      OpenStudio.logFree(OpenStudio::Warn, 'openstudio.standards.SpaceType', 'Space type properties from ASHRAE 90.1-2007 lookup failed')
+    data2019 = @std_prm_2019.space_type_get_standards_data(space_type)
+    if data2019.nil?
+      OpenStudio.logFree(OpenStudio::Warn, 'openstudio.standards.SpaceType', 'Space type properties from ASHRAE 90.1-PRM-2019 lookup failed')
     else
-      space_type_properties = data2007.merge(space_type_properties)
-      space_type_properties['space_type_2007'] = data2007['space_type']
+      space_type_properties = data2019.merge(space_type_properties)
+      space_type_properties['space_type_2019'] = data2019['space_type']
     end
 
     return space_type_properties
@@ -49,7 +49,7 @@ class ACM179dASHRAE9012007
     super(space_type, set_people, set_lights, set_electric_equipment, set_gas_equipment, set_ventilation, set_infiltration)
 
     if set_people
-      data = space_type_get_standards_data(space_type, extend_with_2007: false, throw_if_not_found: true)
+      data = space_type_get_standards_data(space_type, extend_with_2019: false, throw_if_not_found: true)
       people_frac_sensible = data['occupancy_fraction_sensible']
       space_type.people.sort.each do |inst|
         definition = inst.peopleDefinition

@@ -1,4 +1,4 @@
-class ACM179dASHRAE9012007
+class ACM179dASHRAE901PRM2019
   # @!group AirLoopHVAC
 
 # Check if an air loop in user model needs to have DCV per air loop related requiremends in ASHRAE 90.1-2019 6.4.3.8

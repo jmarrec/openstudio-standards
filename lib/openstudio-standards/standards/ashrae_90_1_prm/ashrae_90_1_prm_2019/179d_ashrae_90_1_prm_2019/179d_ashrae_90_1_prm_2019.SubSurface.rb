@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class ACM179dASHRAE9012007
+class ACM179dASHRAE901PRM2019
   def get_exterior_fenestration_value(sub_surface, column_name)
     known_columns = [
       'Construction',

@@ -1,4 +1,4 @@
-class ACM179dASHRAE9012007
+class ACM179dASHRAE901PRM2019
   def __model_get_primary_building_type(model)
     building_types = {}
 

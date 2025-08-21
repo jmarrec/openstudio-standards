@@ -3,7 +3,7 @@
 # See also https://openstudio.net/license
 # *******************************************************************************
 
-class ACM179dASHRAE9012007
+class ACM179dASHRAE901PRM2019
   # @!group ZoneHVACComponent
 
   # If the supply air fan operating mode schedule is always off (to follow load),
