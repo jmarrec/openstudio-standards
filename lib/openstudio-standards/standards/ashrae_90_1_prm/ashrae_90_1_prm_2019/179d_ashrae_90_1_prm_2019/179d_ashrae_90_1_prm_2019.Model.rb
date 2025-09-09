@@ -267,6 +267,7 @@ class ACM179dASHRAE901PRM2019
   # @param wwr_list [Array] list of wwr of zone conditioning category in a building area type category - residential, nonresidential and semiheated
   # @return require_adjustment [Boolean] True, require adjustment, false not require adjustment.
   # NOTE: 179D override so that we adjust the WWR DOWN TO 40%, which is the opposite of the base method (ashrae_90_1_prm.Model.rb does both, returns always true)
+  # TODO: Remove if using openstudio-standards > 0.7.0 https://github.com/NREL/openstudio-standards/commit/0586c5e3cd8df0e97fc099c0d39abe0f5e40ca3a
   def model_does_require_wwr_adjustment?(wwr_limit, wwr_list)
     require_adjustment = false
     wwr_list.each do |wwr|
