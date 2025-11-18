@@ -1,0 +1,32 @@
+{
+  "schedules": [
+    {
+      "name": "SAPResidential_ClgSetp_Sch",
+      "template": "Mio 90.1-2013",
+      "category": "Thermostat Setpoint",
+      "units": "C",
+      "day_types": "Default|WntrDsn|SmrDsn",
+      "start_date": "2014-01-01T00:00:00+00:00",
+      "end_date": "2014-12-31T00:00:00+00:00",
+      "type": "Constant",
+      "notes": "Mio 90.1-2013",
+      "values": [
+        26.0
+      ]
+    },
+    {
+      "name": "SAPResidential_HtgSetp_Sch",
+      "template": "Mio 90.1-2013",
+      "category": "Thermostat Setpoint",
+      "units": "C",
+      "day_types": "Default|WntrDsn|SmrDsn",
+      "start_date": "2014-01-01T00:00:00+00:00",
+      "end_date": "2014-12-31T00:00:00+00:00",
+      "type": "Constant",
+      "notes": "Mio 90.1-2013",
+      "values": [
+        19.0
+      ]
+    }
+  ]
+}

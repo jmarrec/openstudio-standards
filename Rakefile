@@ -1,6 +1,8 @@
 require 'bundler/gem_tasks'
-require 'json'
 require 'fileutils'
+require 'json'
+require 'pathname'
+
 begin
   Bundler.setup
 rescue Bundler::BundlerError => e
@@ -186,6 +188,37 @@ namespace :data do
   task 'export:jsons' do
     export_spreadsheet_to_json(spreadsheets_ashrae, dataset_type: 'data_lib')
   end
+
+  desc 'Generate Mio JSONs from OpenStudio_Standards spreadsheets'
+  task 'update:mio' do
+
+    # The spreadsheet OpenStudio_Standards-ashrae_90_1(space_types).xlsx must
+    # be downloaded from the Google Driver folder in the data/standards folder
+    # at data/standards/OpenStudio_Standards-90_1-ALL-mio(space_types).xlsx
+
+    # There is a glob happening based on the spreasheet title, and the receiving folder should exist
+    proper_dir = Pathname.new("#{__dir__}/lib/openstudio-standards/standards/ashrae_90_1/ashrae_90_1_2013/mio_ashrae_90_1_2013")
+    FileUtils.mkdir_p(proper_dir)
+
+    schedules_notes_filter = [
+      # Regex, template assignment
+      [/Mio/i, 'Mio 90.1-2013']
+    ]
+    export_spreadsheet_to_json(
+      ['OpenStudio_Standards-90_1-ALL-mio(space_types)'],
+      dataset_type: 'os_stds',
+      skip_templates: ['90.1-2013'],
+      schedules_notes_filter: schedules_notes_filter
+    )
+
+    # Remove this Any one
+    any_path = (proper_dir / 'data/Any.spc_typ.json')
+    FileUtils.rm_f(any_path)
+
+    puts "\n\nGenerated Mio JSONS in #{proper_dir}:"
+    puts proper_dir.glob("**/*.json")
+  end
+
 end
 
 # Tasks to export libraries packaged with
