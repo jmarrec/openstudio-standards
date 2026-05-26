@@ -1271,6 +1271,17 @@ class ACM179dASHRAE9012007
       controller_oa = air_loop_hvac_oasys.getControllerOutdoorAir
       sizing_system = air_loop.sizingSystem
 
+      # When DCV is enabled, Controller:OutdoorAir.MinimumOutdoorAirFlowRate is 0
+      # by design (DCV modulates Vbz via Controller:MechanicalVentilation at
+      # runtime). Sizing:System.designOutdoorAirFlowRate must keep the VRP-computed
+      # Vot from model_apply_multizone_vav_outdoor_air_sizing — propagating the
+      # Controller zero here would undersize the AHU and zero out the design OA.
+      controller_mv = controller_oa.controllerMechanicalVentilation
+      if controller_mv.demandControlledVentilation
+        OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "Skipping OA rate force for '#{air_loop.nameString}': DCV enabled — Sizing:System retains VRP-computed Vot.")
+        next
+      end
+
       # get minimum outdoor airflow rate from Controller:OutdoorAir
       minimum_outdoor_airflow_rate_m_3_per_s = nil
       if controller_oa.minimumOutdoorAirFlowRate.is_initialized

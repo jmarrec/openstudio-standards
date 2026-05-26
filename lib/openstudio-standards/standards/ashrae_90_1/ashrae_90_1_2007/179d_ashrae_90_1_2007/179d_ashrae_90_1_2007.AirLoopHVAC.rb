@@ -239,22 +239,23 @@ class ACM179dASHRAE9012007
       ## end
     end
 
-    # DCV
-    # only apply DCV in baseline
-    if baseline_179d
-      if air_loop_hvac_demand_control_ventilation_required?(air_loop_hvac, climate_zone)
-        air_loop_hvac_enable_demand_control_ventilation(air_loop_hvac, climate_zone)
-        # For systems that require DCV,
-        # all individual zones that require DCV preserve
-        # both per-area and per-person OA requirements.
-        # Other zones have OA requirements converted
-        # to per-area values only so DCV performance is only
-        # based on the subset of zones that required DCV.
-        OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.AirLoopHVAC', "For #{air_loop_hvac.name}: Converting ventilation requirements to per-area for all zones served that do not require DCV.")
-        air_loop_hvac.thermalZones.sort.each do |zone|
-          unless thermal_zone_demand_control_ventilation_required?(zone, climate_zone)
-            thermal_zone_convert_oa_req_to_per_area(zone)
-          end
+    # DCV — apply per 90.1-2007 §6.4.3.9 / 90.1-2019 §6.4.3.8 in both proposed
+    # and baseline. Previously gated on baseline_179d; that gating produced an
+    # inverted OA comparison (proposed delivered full Vot continuously while
+    # baseline modulated by occupancy) and a code-noncompliant proposed model.
+    # See DCV-PROPOSED-VS-BASELINE-HISTORY.md.
+    if air_loop_hvac_demand_control_ventilation_required?(air_loop_hvac, climate_zone)
+      air_loop_hvac_enable_demand_control_ventilation(air_loop_hvac, climate_zone)
+      # For systems that require DCV,
+      # all individual zones that require DCV preserve
+      # both per-area and per-person OA requirements.
+      # Other zones have OA requirements converted
+      # to per-area values only so DCV performance is only
+      # based on the subset of zones that required DCV.
+      OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.AirLoopHVAC', "For #{air_loop_hvac.name}: Converting ventilation requirements to per-area for all zones served that do not require DCV.")
+      air_loop_hvac.thermalZones.sort.each do |zone|
+        unless thermal_zone_demand_control_ventilation_required?(zone, climate_zone)
+          OpenstudioStandards::ThermalZone.thermal_zone_convert_outdoor_air_to_per_area(zone)
         end
       end
     end
