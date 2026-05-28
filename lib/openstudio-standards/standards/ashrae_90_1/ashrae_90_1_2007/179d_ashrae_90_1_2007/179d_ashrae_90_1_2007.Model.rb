@@ -1701,4 +1701,20 @@ class ACM179dASHRAE9012007
     return true
   end
 
+  def model_add_exhaust(model, makeup_source: 'None', remove_existing_exhaust_fans: true)
+    zone_exhaust_fans = []
+    # remove existing exhaust fans
+    if remove_existing_exhaust_fans
+      model.getFanZoneExhausts.each(&:remove)
+    end
+
+    model.getThermalZones.sort.each do |thermal_zone|
+      zone_exhaust_fan = thermal_zone_add_exhaust(thermal_zone)
+      next if zone_exhaust_fan.nil?
+
+      zone_exhaust_fans << zone_exhaust_fan
+    end
+
+    zone_exhaust_fans
+  end
 end
