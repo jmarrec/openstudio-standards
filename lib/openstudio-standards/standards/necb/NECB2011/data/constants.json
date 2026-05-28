@@ -1,0 +1,139 @@
+{
+  "constants": {
+    "skylight_to_roof_ratio_max_value": {
+      "data_type": "value",
+      "refs": [
+        "NECB2011_S_3.2.1.4(2)"
+      ],
+      "value": 0.05,
+      "units": "ratio",
+      "notes": ""
+    },
+    "sizing_factor_max_cooling": {
+      "data_type": "value",
+      "refs": [
+        "NECB2011_S_8.4.4.9(1)"
+      ],
+      "value": 1.1,
+      "units": "ratio",
+      "notes": ""
+    },
+    "sizing_factor_max_heating": {
+      "data_type": "value",
+      "refs": [
+        "NECB2011_S_8.4.4.9(2)"
+      ],
+      "value": 1.3,
+      "units": "ratio",
+      "notes": ""
+    },
+    "fan_constant_volume_pressure_rise_value": {
+      "data_type": "value",
+      "refs": [
+        "NECB2011_S_5.Assumption"
+      ],
+      "value": 640.0,
+      "units": "Pa",
+      "notes": ""
+    },
+    "supply_fan_variable_volume_pressure_rise_value": {
+      "data_type": "value",
+      "refs": [
+        "NECB2011_S_5.Assumption"
+      ],
+      "value": 1000.0,
+      "units": "Pa",
+      "notes": "Sets the supply fan pressure rise based on the Prototype buildings inputs"
+    },
+    "return_fan_variable_volume_pressure_rise_value": {
+      "data_type": "value",
+      "refs": [
+        "NECB2011_S_5.Assumption"
+      ],
+      "value": 250.0,
+      "units": "Pa",
+      "notes": "Sets the return fan pressure rise based on the Prototype buildings inputs"
+    },
+    "infiltration_rate_m3_per_s_per_m2":{
+    "data_type": "value",
+    "refs": [
+      "NECB2011_S_5.Assumption"
+    ],
+    "value": 0.00025,
+    "units": "m3/s/m2",
+    "notes": ""
+  },
+    "infiltration_constant_term_coefficient":{
+      "data_type": "value",
+      "refs": [
+        "NECB2011_S_5.Assumption"
+      ],
+      "value": 0.0,
+      "units": "",
+      "notes": ""
+    },
+    "infiltration_temperature_term_coefficient":{
+      "data_type": "value",
+      "refs": [
+        "NECB2011_S_5.Assumption"
+      ],
+      "value": 0.0,
+      "units": "",
+      "notes": ""
+    },
+    "infiltration_velocity_term_coefficient":{
+      "data_type": "value",
+      "refs": [
+        "Assumption"
+      ],
+      "value": 0.224,
+      "units": "",
+      "notes": ""
+    },
+    "infiltration_velocity_squared_term_coefficient":{
+      "data_type": "value",
+      "refs": [
+        "Assumption"
+      ],
+      "value": 0.0,
+      "units": "",
+      "notes": ""
+    },
+    "historic_weather_file_list": {
+      "data_type": "value",
+      "refs": [
+        "Defined"
+      ],
+      "value": "https://github.com/canmet-energy/btap_weather/raw/main/historic_weather_filenames.json",
+      "units": "",
+      "notes": "This is the url of the file containing the list of historic Canadian weather files in the canmet-eneryg/btap_weather GitHub repository."
+    },
+    "future_weather_file_list": {
+      "data_type": "value",
+      "refs": [
+        "Defined"
+      ],
+      "value": "https://github.com/canmet-energy/btap_weather/raw/main/future_weather_filenames.json",
+      "units": "",
+      "notes": "This is the url of the file containing the list of future Canadian weather files in the canmet-eneryg/btap_weather GitHub repository."
+    },
+    "historic_weather_folder_url": {
+      "data_type": "value",
+      "refs": [
+        "Defined"
+      ],
+      "value": "https://github.com/canmet-energy/btap_weather/raw/main/historic/",
+      "units": "",
+      "notes": "This is the url of the folder containing the historic Canadian weather files in the canmet-eneryg/btap_weather GitHub repository."
+    },
+    "future_weather_folder_url": {
+      "data_type": "value",
+      "refs": [
+        "Defined"
+      ],
+      "value": "https://github.com/canmet-energy/btap_weather/raw/main/future/",
+      "units": "",
+      "notes": "This is the url of the folder containing the future Canadian weather files in the canmet-eneryg/btap_weather GitHub repository."
+    }
+  }
+}

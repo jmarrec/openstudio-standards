@@ -1,0 +1,1431 @@
+{
+  "constructions": [
+    {
+      "name": "ASHRAE 189.1-2009 ExtWindow ClimateZone 1",
+      "intended_surface_type": "ExteriorWindow",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Theoretical Glass [167]"
+      ]
+    },
+    {
+      "name": "ASHRAE 189.1-2009 ExtWindow ClimateZone 2",
+      "intended_surface_type": "ExteriorWindow",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Theoretical Glass [197]"
+      ]
+    },
+    {
+      "name": "ASHRAE 189.1-2009 ExtWindow ClimateZone 3",
+      "intended_surface_type": "ExteriorWindow",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Theoretical Glass [202]"
+      ]
+    },
+    {
+      "name": "ASHRAE 189.1-2009 ExtWindow ClimateZone 4-5",
+      "intended_surface_type": "ExteriorWindow",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Theoretical Glass [207]"
+      ]
+    },
+    {
+      "name": "ASHRAE 189.1-2009 ExtWindow ClimateZone 6",
+      "intended_surface_type": "ExteriorWindow",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Theoretical Glass [216]"
+      ]
+    },
+    {
+      "name": "ASHRAE 189.1-2009 ExtWindow ClimateZone 7-8",
+      "intended_surface_type": "ExteriorWindow",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Theoretical Glass [221]"
+      ]
+    },
+    {
+      "name": "ASHRAE 189.1-2009 ExtWindow ClimateZone alt-res 4-5",
+      "intended_surface_type": "ExteriorWindow",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Theoretical Glass [216]"
+      ]
+    },
+    {
+      "name": "Adiabatic ExteriorFloor",
+      "intended_surface_type": "ExteriorFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Adiabatic Material"
+      ]
+    },
+    {
+      "name": "Adiabatic GroundContactFloor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Adiabatic Material"
+      ]
+    },
+    {
+      "name": "Adiabatic Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "Attic and Other",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Adiabatic Material"
+      ]
+    },
+    {
+      "name": "Adiabatic Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Adiabatic Material"
+      ]
+    },
+    {
+      "name": "DEER Carpeted 12in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Unheated",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "12 in. Normalweight Concrete Floor",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "DEER Carpeted 4in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Unheated",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "4 in. Normalweight Concrete Floor",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "DEER Carpeted 6in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Unheated",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "6 in. Normalweight Concrete Floor",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "DEER HiRiseResHtlMtl Exterior Mass Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER HiRiseResHtlMtl Exterior Mass Roof - Cool Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane - Cool Roof",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER HiRiseResHtlMtl Exterior Mass Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "8 in. Concrete Block Wall",
+        "Typical Insulation"
+      ]
+    },
+    {
+      "name": "DEER HiRiseResHtlMtl Exterior Metal Framed Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "IEAD",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER HiRiseResHtlMtl Exterior Metal Framed Roof - Cool Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "IEAD",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane - Cool Roof",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER HiRiseResHtlMtl Exterior Metal Framed Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "SteelFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "25mm Stucco",
+        "5/8 in. Gypsum Board",
+        "Typical Insulation",
+        "5/8 in. Gypsum Board"
+      ]
+    },
+    {
+      "name": "DEER HiRiseResHtlMtl Exterior Wood Framed Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER HiRiseResHtlMtl Exterior Wood Framed Roof - Cool Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "IEAD",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane - Cool Roof",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER HiRiseResHtlMtl Exterior Wood Framed Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "25mm Stucco",
+        "5/8 in. Gypsum Board",
+        "Typical Insulation",
+        "5/8 in. Gypsum Board"
+      ]
+    },
+    {
+      "name": "DEER Insulated Exterior Mass Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "8 in. Concrete Block Wall",
+        "Typical Insulation"
+      ]
+    },
+    {
+      "name": "DEER Insulated Steel Framed Exterior Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "SteelFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "25mm Stucco",
+        "5/8 in. Gypsum Board",
+        "Typical Insulation",
+        "5/8 in. Gypsum Board"
+      ]
+    },
+    {
+      "name": "DEER Insulated Wood Framed Exterior Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "25mm Stucco",
+        "5/8 in. Gypsum Board",
+        "Typical Insulation",
+        "5/8 in. Gypsum Board"
+      ]
+    },
+    {
+      "name": "DEER Mass Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER Mass Roof - Cool Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane - Cool Roof",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER Metal Framed Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "IEAD",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER Metal Framed Roof - Cool Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "IEAD",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane - Cool Roof",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER Metal Framed Window",
+      "intended_surface_type": "ExteriorWindow",
+      "standards_construction_type": "Nonmetal framing (all)",
+      "insulation_layer": "Simple Glazing",
+      "skylight_framing": null,
+      "materials": [
+        "Simple Glazing"
+      ]
+    },
+    {
+      "name": "DEER Skylight",
+      "intended_surface_type": "ExteriorWindow",
+      "standards_construction_type": "Nonmetal framing (all)",
+      "insulation_layer": "Simple Glazing",
+      "skylight_framing": null,
+      "materials": [
+        "Simple Glazing"
+      ]
+    },
+    {
+      "name": "DEER Uncarpeted 12in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Unheated",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "12 in. Normalweight Concrete Floor"
+      ]
+    },
+    {
+      "name": "DEER Uncarpeted 4in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Unheated",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "4 in. Normalweight Concrete Floor"
+      ]
+    },
+    {
+      "name": "DEER Uncarpeted 6in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Unheated",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "6 in. Normalweight Concrete Floor"
+      ]
+    },
+    {
+      "name": "DEER Wood Framed Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "DEER Wood Framed Roof - Cool Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "IEAD",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane - Cool Roof",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "Ground FloorGround_Floor_R11_T2013",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Ground_Floor_R11_T2013",
+        "Plywood - 5/8 in. CBES",
+        "Carpet - 3/4 in. CBES"
+      ]
+    },
+    {
+      "name": "Ground FloorGround_Floor_R17_T2013",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Ground_Floor_R17_T2013",
+        "Plywood - 5/8 in. CBES",
+        "Carpet - 3/4 in. CBES"
+      ]
+    },
+    {
+      "name": "Ground FloorGround_Floor_R22_T2013",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Ground_Floor_R22_T2013",
+        "Plywood - 5/8 in. CBES",
+        "Carpet - 3/4 in. CBES"
+      ]
+    },
+    {
+      "name": "LargeHotel Interior Ceiling",
+      "intended_surface_type": "InteriorCeiling",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "CP02 CARPET PAD",
+        "100mm Normalweight concrete floor",
+        "Nonres_Floor_Insulation"
+      ]
+    },
+    {
+      "name": "LargeHotel Interior Floor",
+      "intended_surface_type": "InteriorFloor",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Nonres_Floor_Insulation",
+        "100mm Normalweight concrete floor",
+        "CP02 CARPET PAD"
+      ]
+    },
+    {
+      "name": "LargeHotel Interior Wall",
+      "intended_surface_type": "InteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "G01 13mm gypsum board",
+        "G01 13mm gypsum board"
+      ]
+    },
+    {
+      "name": "Metal framed wallsW1_R8.60",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Stucco - 7/8 in. CBES",
+        "W1_R8.60",
+        "Air - Metal Wall Framing - 16 or 24 in. OC",
+        "Gypsum Board - 1/2 in. CBES"
+      ]
+    },
+    {
+      "name": "Metal framed wallsW2_R11.13",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Stucco - 7/8 in. CBES",
+        "W2_R11.13",
+        "Air - Metal Wall Framing - 16 or 24 in. OC",
+        "Gypsum Board - 1/2 in. CBES"
+      ]
+    },
+    {
+      "name": "Metal framed wallsW3_R11.36",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Stucco - 7/8 in. CBES",
+        "W3_R11.36",
+        "Air - Metal Wall Framing - 16 or 24 in. OC",
+        "Gypsum Board - 1/2 in. CBES"
+      ]
+    },
+    {
+      "name": "Metal framed wallsW4_R12.62",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Stucco - 7/8 in. CBES",
+        "W4_R12.62",
+        "Air - Metal Wall Framing - 16 or 24 in. OC",
+        "Gypsum Board - 1/2 in. CBES"
+      ]
+    },
+    {
+      "name": "Metal framed wallsW_T24_2013_R13.99",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Stucco - 7/8 in. CBES",
+        "W_T24_2013_R13.99",
+        "Air - Metal Wall Framing - 16 or 24 in. OC",
+        "Gypsum Board - 1/2 in. CBES"
+      ]
+    },
+    {
+      "name": "Metal framed wallsW_m1_R15",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Stucco - 7/8 in. CBES",
+        "W_m1_R15",
+        "Air - Metal Wall Framing - 16 or 24 in. OC",
+        "Gypsum Board - 1/2 in. CBES"
+      ]
+    },
+    {
+      "name": "Metal framed wallsW_m2_R19",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Stucco - 7/8 in. CBES",
+        "W_m2_R19",
+        "Air - Metal Wall Framing - 16 or 24 in. OC",
+        "Gypsum Board - 1/2 in. CBES"
+      ]
+    },
+    {
+      "name": "Metal framed wallsW_m3_R21",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Stucco - 7/8 in. CBES",
+        "W_m3_R21",
+        "Air - Metal Wall Framing - 16 or 24 in. OC",
+        "Gypsum Board - 1/2 in. CBES"
+      ]
+    },
+    {
+      "name": "Metal roofR1_R14.20",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Metal Standing Seam - 1/16 in. CBES",
+        "R1_R14.20"
+      ]
+    },
+    {
+      "name": "Metal roofR2_R12.90",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Metal Standing Seam - 1/16 in. CBES",
+        "R2_R12.90"
+      ]
+    },
+    {
+      "name": "Metal roofR3_R17.74",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Metal Standing Seam - 1/16 in. CBES",
+        "R3_R17.74"
+      ]
+    },
+    {
+      "name": "Metal roofR4_R20.28",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Metal Standing Seam - 1/16 in. CBES",
+        "R4_R20.28"
+      ]
+    },
+    {
+      "name": "Metal roofR_R30",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Metal Standing Seam - 1/16 in. CBES",
+        "R_R30"
+      ]
+    },
+    {
+      "name": "Metal roofR_R38",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Metal Standing Seam - 1/16 in. CBES",
+        "R_R38"
+      ]
+    },
+    {
+      "name": "Metal roofR_T24_2013_24.86",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Metal Standing Seam - 1/16 in. CBES",
+        "R_T24_2013_24.86"
+      ]
+    },
+    {
+      "name": "NACM_Drop Ceiling",
+      "intended_surface_type": "InteriorCeiling",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Acoustic Ceiling"
+      ]
+    },
+    {
+      "name": "NACM_Interior Floor",
+      "intended_surface_type": "InteriorFloor",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "NACM_Carpet 3/4in"
+      ]
+    },
+    {
+      "name": "NACM_Interior Wall",
+      "intended_surface_type": "InteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "NACM_Gypsum Board 5/8in",
+        "NACM_Gypsum Board 5/8in"
+      ]
+    },
+    {
+      "name": "Plenum Acoustical Tile",
+      "intended_surface_type": "InteriorCeiling",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Acoustic Tile - 1/2 in."
+      ]
+    },
+    {
+      "name": "Smallhotel 2010 Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "8 in. Normalweight Concrete Floor",
+        "CP02 CARPET PAD"
+      ]
+    },
+    {
+      "name": "Typical Attic Floor",
+      "intended_surface_type": "AtticFloor",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "1/2IN Gypsum",
+        "Typical Insulation",
+        "1/2IN Gypsum"
+      ]
+    },
+    {
+      "name": "Typical Attic Soffit",
+      "intended_surface_type": "AtticWall",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "5/8 in. Plywood"
+      ]
+    },
+    {
+      "name": "Typical Built Up Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "IEAD",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Built-up Roofing",
+        "Typical Insulation",
+        "Metal Surface"
+      ]
+    },
+    {
+      "name": "Typical Built Up Roof - Highly Reflective",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "IEAD",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Built-up Roofing - Highly Reflective",
+        "Typical Insulation",
+        "Metal Surface"
+      ]
+    },
+    {
+      "name": "Typical Carpeted 4in Slab Floor",
+      "intended_surface_type": "ExteriorFloor",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "MAT-CC05 4 HW CONCRETE",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Carpeted 6in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "6 in. Normalweight Concrete Floor",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Carpeted 8in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "8 in. Concrete Block Basement Wall",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical IEAD Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "IEAD",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "Typical IEAD Roof - Highly Reflective",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "IEAD",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane - Highly Reflective",
+        "Typical Insulation",
+        "Metal Roof Surface"
+      ]
+    },
+    {
+      "name": "Typical Insulated 6in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "6 in. Normalweight Concrete Floor"
+      ]
+    },
+    {
+      "name": "Typical Insulated 8in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "8 in. Normalweight Concrete Floor"
+      ]
+    },
+    {
+      "name": "Typical Insulated Basement Mass Wall",
+      "intended_surface_type": "GroundContactWall",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "8 in. Concrete Block Basement Wall"
+      ]
+    },
+    {
+      "name": "Typical Insulated Carpeted 4in Slab Floor",
+      "intended_surface_type": "ExteriorFloor",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "MAT-CC05 4 HW CONCRETE",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Insulated Carpeted 6in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "6 in. Normalweight Concrete Floor",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Insulated Carpeted 8in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "8 in. Normalweight Concrete Floor",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Insulated Exterior Mass Floor",
+      "intended_surface_type": "ExteriorFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "4 in. Normalweight Concrete Floor",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Insulated Exterior Mass Floor Ceiling",
+      "intended_surface_type": "ExteriorFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Carpet Pad",
+        "4 in. Normalweight Concrete Floor",
+        "Typical Insulation"
+      ]
+    },
+    {
+      "name": "Typical Insulated Exterior Mass Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "1IN Stucco",
+        "8IN CONCRETE HW RefBldg",
+        "Typical Insulation",
+        "1/2IN Gypsum"
+      ]
+    },
+    {
+      "name": "Typical Insulated Interior Wall",
+      "intended_surface_type": "InteriorWall",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "25mm Stucco",
+        "5/8 in. Gypsum Board",
+        "Typical Insulation",
+        "Steel Frame/Cavity",
+        "5/8 in. Gypsum Board"
+      ]
+    },
+    {
+      "name": "Typical Insulated Metal Building Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "Metal",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Metal Roof Surface",
+        "Typical Insulation"
+      ]
+    },
+    {
+      "name": "Typical Insulated Metal Building Roof - Highly Reflective",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "Metal",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Metal Roof Surface - Highly Reflective",
+        "Typical Insulation"
+      ]
+    },
+    {
+      "name": "Typical Insulated Metal Building Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "Metal",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Metal Siding",
+        "Typical Insulation",
+        "1/2IN Gypsum"
+      ]
+    },
+    {
+      "name": "Typical Insulated Metal Door",
+      "intended_surface_type": "ExteriorDoor",
+      "standards_construction_type": null,
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "F08 Metal surface",
+        "Typical Insulation"
+      ]
+    },
+    {
+      "name": "Typical Insulated Steel Framed Exterior Floor",
+      "intended_surface_type": "ExteriorFloor",
+      "standards_construction_type": "SteelFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "25mm Stucco",
+        "5/8 in. Gypsum Board",
+        "Typical Insulation",
+        "5/8 in. Gypsum Board",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Insulated Steel Framed Exterior Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "SteelFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "25mm Stucco",
+        "5/8 in. Gypsum Board",
+        "Typical Insulation",
+        "5/8 in. Gypsum Board"
+      ]
+    },
+    {
+      "name": "Typical Insulated Wood Framed Exterior Floor",
+      "intended_surface_type": "ExteriorFloor",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "25mm Stucco",
+        "5/8 in. Gypsum Board",
+        "Typical Insulation",
+        "5/8 in. Gypsum Board",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Insulated Wood Framed Exterior Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "25mm Stucco",
+        "5/8 in. Gypsum Board",
+        "Typical Insulation",
+        "5/8 in. Gypsum Board"
+      ]
+    },
+    {
+      "name": "Typical Interior Ceiling",
+      "intended_surface_type": "InteriorCeiling",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "CP02 CARPET PAD",
+        "100mm Normalweight concrete floor"
+      ]
+    },
+    {
+      "name": "Typical Interior Door",
+      "intended_surface_type": "InteriorDoor",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "G05 25mm wood"
+      ]
+    },
+    {
+      "name": "Typical Interior Floor",
+      "intended_surface_type": "InteriorFloor",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "100mm Normalweight concrete floor",
+        "CP02 CARPET PAD"
+      ]
+    },
+    {
+      "name": "Typical Interior Partition",
+      "intended_surface_type": "InteriorPartition",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "G05 25mm wood"
+      ]
+    },
+    {
+      "name": "Typical Interior Slab Floor",
+      "intended_surface_type": "InteriorFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "4 in. Normalweight Concrete Floor",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Interior Wall",
+      "intended_surface_type": "InteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "G01 13mm gypsum board",
+        "G01 13mm gypsum board"
+      ]
+    },
+    {
+      "name": "Typical Interior Window",
+      "intended_surface_type": "InteriorWindow",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Clear 3mm"
+      ]
+    },
+    {
+      "name": "Typical Overhead Door",
+      "intended_surface_type": "ExteriorDoor",
+      "standards_construction_type": "RollUp",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation"
+      ]
+    },
+    {
+      "name": "Typical Uncarpeted 4in Slab Floor",
+      "intended_surface_type": "ExteriorFloor",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "MAT-CC05 4 HW CONCRETE"
+      ]
+    },
+    {
+      "name": "Typical Uncarpeted 6in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "6 in. Normalweight Concrete Floor"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated 6in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "6 in. Normalweight Concrete Floor"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated 8in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "8 in. Normalweight Concrete Floor"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Basement Mass Wall",
+      "intended_surface_type": "GroundContactWall",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "8 in. Concrete Block Basement Wall"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Carpeted 8in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "8 in. Concrete Block Basement Wall",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Exterior Mass Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "1IN Stucco",
+        "8IN CONCRETE HW RefBldg",
+        "1/2IN Gypsum"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Interior Wall",
+      "intended_surface_type": "InteriorWall",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "1/2 in. Gypsum Board",
+        "1/2 in. Gypsum Board"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Metal Building Roof",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "Metal",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Metal Roofing"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Metal Building Roof - Highly Reflective",
+      "intended_surface_type": "ExteriorRoof",
+      "standards_construction_type": "Metal",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Metal Roofing - Highly Reflective"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Metal Building Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "Metal",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Metal Siding",
+        "1/2IN Gypsum"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Metal Roof Attic Roof",
+      "intended_surface_type": "AtticRoof",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Roof Membrane",
+        "Metal Decking"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Steel Framed Exterior Wall",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": "SteelFramed",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Wood Siding",
+        "1/2IN Gypsum"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Swinging Door",
+      "intended_surface_type": "ExteriorDoor",
+      "standards_construction_type": "Swinging",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation"
+      ]
+    },
+    {
+      "name": "Typical Uninsulated Wood Joist Attic Roof",
+      "intended_surface_type": "AtticRoof",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Asphalt Shingles",
+        "5/8 in. Plywood"
+      ]
+    },
+    {
+      "name": "Typical Unisulated Carpeted 6in Slab Floor",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "6 in. Normalweight Concrete Floor",
+        "Typical Carpet Pad"
+      ]
+    },
+    {
+      "name": "Typical Wood Joist Attic Floor",
+      "intended_surface_type": "AtticFloor",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": "Typical Insulation",
+      "skylight_framing": null,
+      "materials": [
+        "5/8 in. Gypsum Board",
+        "Typical Insulation"
+      ]
+    },
+    {
+      "name": "Typical Wood Joist Attic Floor Ceiling",
+      "intended_surface_type": "AtticFloor",
+      "standards_construction_type": "WoodFramed",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Typical Insulation",
+        "5/8 in. Gypsum Board"
+      ]
+    },
+    {
+      "name": "U 0.98 SHGC 0.68 Sgl Ref-B-H Clr 6mm",
+      "intended_surface_type": "ExteriorWindow",
+      "standards_construction_type": "Metal framing (all other)",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "REF B CLEAR HI 6MM"
+      ]
+    },
+    {
+      "name": "WoodWallU110",
+      "intended_surface_type": "ExteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Plywood - 5/8 in.",
+        "Compliance Insulation R6.46",
+        "Air - Metal Wall Framing - 16 or 24 in. OC",
+        "Gypsum Board - 3/8 in."
+      ]
+    },
+    {
+      "name": "ceiling_Metal roof",
+      "intended_surface_type": "InteriorCeiling",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "Metal Standing Seam - 1/16 in.",
+        "ceiling_2_Insulation"
+      ]
+    },
+    {
+      "name": "ext-slab",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "6 in. Normalweight Concrete Floor"
+      ]
+    },
+    {
+      "name": "ext-slab-mass",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Mass",
+      "insulation_layer": "CP02 CARPET PAD",
+      "skylight_framing": null,
+      "materials": [
+        "HW CONCRETE",
+        "CP02 CARPET PAD"
+      ]
+    },
+    {
+      "name": "ext-slab-metal-building",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "Metal Building",
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "HW CONCRETE 8 in"
+      ]
+    },
+    {
+      "name": "ext-slab-steel-frame",
+      "intended_surface_type": "GroundContactFloor",
+      "standards_construction_type": "SteelFramed",
+      "insulation_layer": "CP02 CARPET PAD",
+      "skylight_framing": null,
+      "materials": [
+        "HW CONCRETE 8 in",
+        "CP02 CARPET PAD"
+      ]
+    },
+    {
+      "name": "int_slab_ceiling_smallhotel",
+      "intended_surface_type": "InteriorCeiling",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "CP02 CARPET PAD",
+        "4 in. Normalweight Concrete Floor"
+      ]
+    },
+    {
+      "name": "int_slab_floor_smallhotel",
+      "intended_surface_type": "InteriorFloor",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "4 in. Normalweight Concrete Floor",
+        "CP02 CARPET PAD"
+      ]
+    },
+    {
+      "name": "int_wall_smallhotel",
+      "intended_surface_type": "InteriorWall",
+      "standards_construction_type": null,
+      "insulation_layer": null,
+      "skylight_framing": null,
+      "materials": [
+        "1/2 in. Gypsum Board",
+        "1/2 in. Gypsum Board"
+      ]
+    }
+  ]
+}

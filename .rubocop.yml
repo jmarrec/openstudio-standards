@@ -1,0 +1,37 @@
+
+# Most of the maintainers of this code are professional engineers,
+# not professional Rubyists.  The style guide for this project
+# has been modified accordingly, with explanations given below.
+# Where a Cop is not listed, it uses the Rubocop defaults.
+
+AllCops:
+  Exclude:
+    - 'data/**/*'
+    - 'test/**/*'
+    - 'lib/openstudio-standards/btap/**/*'
+    - 'lib/openstudio-standards/standards/necb/**/*'
+    - 'lib/openstudio-standards/prototypes/common/do_not_edit_metaclasses.rb'
+  NewCops: enable
+
+inherit_from:
+  - http://s3.amazonaws.com/openstudio-resources/styles/rubocop.yml
+
+# =============== OpenStudio Standards Specific ===========
+# Ignore file name convention; choices based on OpenStudio C++ class names
+Metrics/AbcSize:
+  Max: 200
+
+Metrics/BlockLength:
+  Max: 100
+
+Naming/FileName:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/HashSyntax:
+  EnforcedShorthandSyntax: either
+
+Style/HashEachMethods:
+  Enabled: false

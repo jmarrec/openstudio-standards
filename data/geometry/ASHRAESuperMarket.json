@@ -1,0 +1,414 @@
+[
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_1",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Main Sales"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_2",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "West Perimeter Sales"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_3",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "East Perimeter Sales"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_4",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Produce"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_5",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Deli"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_6",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Bakery"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_7",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Enclosed Office"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_8",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Meeting Room"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_9",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Dining Room"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_10",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Restroom"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_11",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Mechanical Room"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_12",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Corridor"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_13",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Vestibule"
+    ]
+  },
+  {
+    "type": "PSZ-AC",
+    "name": "PSZ_14",
+    "operation_schedule": "SuperMarket HVACOperationSchd",
+    "oa_damper_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "fan_type": "ConstantVolume",
+    "cooling_type": "Two Speed DX AC",
+    "heating_type": "Gas",
+    "supplemental_heating_type": "Electric",
+    "space_names": [
+      "Active Storage"
+    ]
+  },
+  {
+    "type": "Exhaust Fan",
+    "name": "Bakery Exahust Fan",
+    "flow_rate": 0.354,
+    "operation_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "flow_fraction_schedule": null,
+    "balanced_exhaust_fraction_schedule": null,
+    "space_names": [
+      "Bakery"
+    ]
+  },
+  {
+    "type": "Exhaust Fan",
+    "name": "Deli Exahust Fan",
+    "flow_rate": 0.3374,
+    "operation_schedule": "SuperMarket MinOA_MotorizedDamper_Sched",
+    "flow_fraction_schedule": null,
+    "balanced_exhaust_fraction_schedule": null,
+    "space_names": [
+      "Deli"
+    ]
+  },
+  {
+    "type": "Refrigeration_system",
+    "compressor_type": "SuperMarket Low Temp",
+    "cases": [
+      {
+        "case_type": "SuperMarket Ice Cream Reach-Ins",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Ice Cream Coffins",
+        "space_names": [
+          "Main Sales"
+        ]
+      }
+    ],
+    "walkins": [
+      {
+        "walkin_type": "SuperMarket Grocery Freezer",
+        "space_names": [
+          "Active Storage"
+        ],
+        "number_of_walkins": 1
+      }
+    ],
+    "name": "Rack A",
+    "space_names": [
+      "Main Sales"
+    ]
+  },
+  {
+    "type": "Refrigeration_system",
+    "compressor_type": "SuperMarket Low Temp",
+    "cases": [
+      {
+        "case_type": "SuperMarket Frozen Food Reach-Ins",
+        "space_names": [
+          "Main Sales"
+        ]
+      }
+    ],
+    "walkins": [
+      {
+        "walkin_type": "SuperMarket Bakery Freezer",
+        "space_names": [
+          "Bakery"
+        ],
+        "number_of_walkins": 1
+      }
+    ],
+    "name": "Rack B",
+    "space_names": [
+      "Main Sales"
+    ]
+  },
+  {
+    "type": "Refrigeration_system",
+    "compressor_type": "SuperMarket Med Temp",
+    "cases": [
+      {
+        "case_type": "SuperMarket Deli Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Dairy Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Dairy Meat Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Meat Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Service Meat Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      }
+    ],
+    "walkins": [
+      {
+        "walkin_type": "SuperMarket Dairy Cooler",
+        "space_names": [
+          "Active Storage"
+        ],
+        "number_of_walkins": 1
+      },
+      {
+        "walkin_type": "SuperMarket Beer Cooler",
+        "space_names": [
+          "Active Storage"
+        ],
+        "number_of_walkins": 1
+      }
+    ],
+    "name": "Rack C",
+    "space_names": [
+      "Main Sales"
+    ]
+  },
+  {
+    "type": "Refrigeration_system",
+    "compressor_type": "SuperMarket Med Temp",
+    "cases": [
+      {
+        "case_type": "SuperMarket Beverage Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Service Deli Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Salad Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Produce Islands",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Floral Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Service Bakery Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      },
+      {
+        "case_type": "SuperMarket Prepared Foods Cases",
+        "space_names": [
+          "Main Sales"
+        ]
+      }
+    ],
+    "walkins": [
+      {
+        "walkin_type": "SuperMarket Meat Cooler",
+        "space_names": [
+          "Active Storage"
+        ],
+        "number_of_walkins": 1
+      },
+      {
+        "walkin_type": "SuperMarket Meat Prep",
+        "space_names": [
+          "Deli"
+        ],
+        "number_of_walkins": 1
+      },
+      {
+        "walkin_type": "SuperMarket Bloom Box",
+        "space_names": [
+          "Active Storage"
+        ],
+        "number_of_walkins": 1
+      },
+      {
+        "walkin_type": "SuperMarket Deli Cooler",
+        "space_names": [
+          "Deli"
+        ],
+        "number_of_walkins": 1
+      },
+      {
+        "walkin_type": "SuperMarket Produce Cooler",
+        "space_names": [
+          "Active Storage"
+        ],
+        "number_of_walkins": 1
+      },
+      {
+        "walkin_type": "SuperMarket Fish Cooler",
+        "space_names": [
+          "Active Storage"
+        ],
+        "number_of_walkins": 1
+      }
+    ],
+    "name": "Rack D",
+    "space_names": [
+      "Main Sales"
+    ]
+  }
+]

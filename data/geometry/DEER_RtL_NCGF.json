@@ -1,0 +1,101 @@
+[
+  {
+    "name": "EL1 Sys1 (PSZ) (G.S1)",
+    "type": "UnitHeater",
+    "heating_type": "Gas",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 South Perim Spc (G.S1)"
+    ]
+  },
+  {
+    "name": "EL1 Sys1 (PSZ) (G.N2)",
+    "type": "UnitHeater",
+    "heating_type": "Gas",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 North Perim Spc (G.N2)"
+    ]
+  },
+  {
+    "name": "EL1 Sys1 (PSZ) (G.E3)",
+    "type": "UnitHeater",
+    "heating_type": "Gas",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 East Perim Spc (G.E3)"
+    ]
+  },
+  {
+    "name": "EL1 Sys1 (PSZ) (G.E4)",
+    "type": "UnitHeater",
+    "heating_type": "Gas",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 East Perim Spc (G.E4)"
+    ]
+  },
+  {
+    "name": "EL1 Sys1 (PSZ) (G.W5)",
+    "type": "UnitHeater",
+    "heating_type": "Gas",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 West Perim Spc (G.W5)"
+    ]
+  },
+  {
+    "name": "EL1 Sys1 (PSZ) (G.W6)",
+    "type": "UnitHeater",
+    "heating_type": "Gas",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 West Perim Spc (G.W6)"
+    ]
+  },
+  {
+    "name": "EL1 Sys1 (PSZ) (G.WSW7)",
+    "type": "UnitHeater",
+    "heating_type": "Gas",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 WSW Perim Spc (G.WSW7)"
+    ]
+  },
+  {
+    "name": "EL1 Sys1 (PSZ) (G.C8)",
+    "type": "UnitHeater",
+    "heating_type": "Gas",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 Core Spc (G.C8)"
+    ]
+  },
+  {
+    "type": "Exhaust Fan",
+    "name": "EL1 West Perim Spc (G.W6) Exhaust Fan",
+    "flow_rate": 2.50926908,
+    "operation_schedule": "D_RtL_All_Fan_Yr",
+    "flow_fraction_schedule": null,
+    "balanced_exhaust_fraction_schedule": "DEER Retail Large Kitchen Exhaust Fan Balance Exhaust Fraction Schedule",
+    "space_names": [
+      "EL1 West Perim Spc (G.W6)"
+    ]
+  }
+]

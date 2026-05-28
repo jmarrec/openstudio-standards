@@ -1,0 +1,13 @@
+/build/
+/coverage/
+**/reports/
+/ci_tests.json
+*test_result.osm
+*test_result.idf
+*diffs.json
+*btap_data_report_test_result.json
+*ecm_envelope_test_result.json
+*qaqc_report_test_result.json
+/necb/regression_tests/output_diff/
+/necb/regression_tests/output_idf/
+/necb/regression_tests/output_osm/

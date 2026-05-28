@@ -1,0 +1,68 @@
+[
+  {
+    "name": "EL1 Sys1 (UVT) (G.ESE1)",
+    "type": "UnitHeater",
+    "heating_type": "Electric",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 ESE Perim Spc (G.ESE1)"
+    ]
+  },
+  {
+    "name": "EL1 Sys1 (UVT) (G.SSW2)",
+    "type": "UnitHeater",
+    "heating_type": "Electric",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 SSW Perim Spc (G.SSW2)"
+    ]
+  },
+  {
+    "name": "EL1 Sys1 (UVT) (G.NW3)",
+    "type": "UnitHeater",
+    "heating_type": "Electric",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 NW Perim Spc (G.NW3)"
+    ]
+  },
+  {
+    "name": "EL1 Sys1 (UVT) (G.N4)",
+    "type": "UnitHeater",
+    "heating_type": "Electric",
+    "fan_type": "OnOff",
+    "fan_static_pressure": 1,
+    "operation_schedule": null,
+    "space_names": [
+      "EL1 North Perim Spc (G.N4)"
+    ]
+  },
+  {
+    "type": "Exhaust Fan",
+    "name": "EL1 NW Perim Spc (G.NW3) Exhaust Fan",
+    "flow_rate": 1.244695327,
+    "operation_schedule": "D_RFF_All_Fan_Yr",
+    "flow_fraction_schedule": null,
+    "balanced_exhaust_fraction_schedule": "DEER Fast Food Restaurant Kitchen Exhaust Fan Balance Exhaust Fraction Schedule",
+    "space_names": [
+      "EL1 NW Perim Spc (G.NW3)"
+    ]
+  },
+  {
+    "type": "Exhaust Fan",
+    "name": "EL1 North Perim Spc (G.N4) Exhaust Fan",
+    "flow_rate": 0.047289134,
+    "operation_schedule": "D_RFF_All_Fan_Yr",
+    "flow_fraction_schedule": null,
+    "balanced_exhaust_fraction_schedule": null,
+    "space_names": [
+      "EL1 North Perim Spc (G.N4)"
+    ]
+  }
+]
