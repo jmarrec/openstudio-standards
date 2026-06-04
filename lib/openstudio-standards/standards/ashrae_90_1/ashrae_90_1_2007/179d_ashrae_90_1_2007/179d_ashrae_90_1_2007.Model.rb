@@ -258,10 +258,17 @@ class ACM179dASHRAE9012007
       end
     end
 
-    # Also sync the occupied schedule to " Ventilation" ZoneVentilationDesignFlowRate objects.
-    # These are created before this method runs (during HVAC setup), so they initially inherit
-    # alwaysOnDiscreteSchedule from the unit heater. Apply the ACM schedule here to keep them in sync.
-    ventilation_zvs = model.getZoneVentilationDesignFlowRates.select { |zv| zv.nameString.end_with?(' Ventilation') }
+    # Also sync the occupied schedule to the heated-only zone " Ventilation"
+    # ZoneVentilationDesignFlowRate objects. These are created before this
+    # method runs (during HVAC setup), so they initially inherit
+    # alwaysOnDiscreteSchedule from the unit heater. Keep the sync limited to
+    # standalone zones so it does not disturb zone ventilation used by other
+    # prototypes.
+    ventilation_zvs = model.getZoneVentilationDesignFlowRates.select do |zv|
+      next false unless zv.nameString.end_with?(' Ventilation')
+      next false unless zv.thermalZone.is_initialized
+      zv.thermalZone.get.airLoopHVAC.empty?
+    end
     unless ventilation_zvs.empty?
       if acm_fan_sch.nil?
         acm_fan_sch = model_add_schedule(model, acm_fan_sch_name)
@@ -717,7 +724,13 @@ class ACM179dASHRAE9012007
 
           if baseline_179d && ['Gas_Furnace', 'Electric_Furnace'].include?(system_type[0])
             OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.Model', "179D - For Unit Heater, adding a ZoneVentilationDesignFlowRate for outside air requirements")
-            model_add_equivalent_zone_ventilation_for_heated_only_zones_with_dsoa(model, sys_group['zones'], ventilation_type: 'Exhaust', ensure_ddy_infiltration: true)
+            model_add_equivalent_zone_ventilation_for_heated_only_zones_with_dsoa(
+              model,
+              sys_group['zones'],
+              ventilation_type: 'Exhaust',
+              ensure_ddy_infiltration: true,
+              add_cooling_exhaust: building_type == 'Warehouse',
+            )
           end
 
           model.getAirLoopHVACs.each do |air_loop|
