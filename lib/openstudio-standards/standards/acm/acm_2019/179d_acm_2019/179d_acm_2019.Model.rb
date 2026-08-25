@@ -1056,15 +1056,27 @@ class ACM179dACM2019
     neighbors.values.max_by(&:floorArea)
   end
 
+  # Zone HVAC types that already deliver outdoor air; the reporting measure counts
+  # their OA, so adding ZoneVentilation on top would double-count ventilation.
+  OA_PROVIDING_ZONE_HVAC_METHODS = [
+    :to_ZoneHVACPackagedTerminalAirConditioner,
+    :to_ZoneHVACPackagedTerminalHeatPump,
+    :to_ZoneHVACWaterToAirHeatPump,
+    :to_ZoneHVACFourPipeFanCoil,
+    :to_ZoneHVACTerminalUnitVariableRefrigerantFlow
+  ].freeze
+
   # Why: heated-only zones served only by unit heaters can otherwise lose design
   # outdoor air in both baseline and proposed paths.
   # What: adds equivalent ZoneVentilation to those heated-only zones.
-  # How: finds unit-heater zones without air loops or existing zone ventilation.
+  # How: finds unit-heater zones without air loops, existing zone ventilation, or
+  # any OA-providing zone unit (PTAC/PTHP/WSHP/FanCoil/VRF).
   # Used by: baseline post-overrides and proposed normalization.
   def add_heated_only_zone_ventilation(model)
     heated_only_zones = model.getThermalZones.select do |zone|
       next false unless zone.airLoopHVACs.empty?
       next false if zone.equipment.any? { |equipment| equipment.to_ZoneVentilationDesignFlowRate.is_initialized }
+      next false if zone.equipment.any? { |equipment| OA_PROVIDING_ZONE_HVAC_METHODS.any? { |meth| equipment.send(meth).is_initialized } }
 
       zone.equipment.any? { |equipment| equipment.to_ZoneHVACUnitHeater.is_initialized }
     end
