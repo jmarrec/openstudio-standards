@@ -9,15 +9,24 @@ class ACM179dACM2019 < Standard
 
   def initialize
     super()
-    @template = ACM_TEMPLATE
+    @template = acm_template
     load_standards_database
+  end
+
+  # Template string and data file names the loader uses. A subclass overrides
+  # these to load a different ACM vintage while reusing every lookup/apply method.
+  def acm_template
+    ACM_TEMPLATE
+  end
+
+  def acm_data_files
+    [ACM_SCHEDULES_FILE, ACM_SPACE_TYPES_FILE]
   end
 
   def load_standards_database(data_directories = [])
     @standards_data = {}
     ([__dir__] + data_directories).each do |data_dir|
-      load_acm_json_file(File.join(data_dir, 'data', ACM_SCHEDULES_FILE))
-      load_acm_json_file(File.join(data_dir, 'data', ACM_SPACE_TYPES_FILE))
+      acm_data_files.each { |file_name| load_acm_json_file(File.join(data_dir, 'data', file_name)) }
     end
     @standards_data
   end
