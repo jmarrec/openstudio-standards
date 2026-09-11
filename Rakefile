@@ -187,6 +187,12 @@ namespace :data do
         template: '179d-ACM-2019',
         destination_parent_dir: standards_dir / 'acm' / 'acm_2019',
         destination_dir_name: '179d_acm_2019'
+      },
+      {
+        spreadsheet_title: 'OpenStudio_Standards-ACM_2005',
+        template: '179d-ACM-2005',
+        destination_parent_dir: standards_dir / 'acm' / 'acm_2005',
+        destination_dir_name: '179d_acm_2005'
       }
     ]
 
