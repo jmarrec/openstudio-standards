@@ -244,6 +244,8 @@ class ACM179dACM2019
   ACM_EXHAUST_HIGH_REHEAT_DESIGN_SAT_C = 50.0
   ACM_EXHAUST_SPACE_TYPES_PRM_2019 = ['Kitchen', 'Restroom', 'Cafeteria'].freeze
   ACM_INFILTRATION_RATE_CFM_PER_FT2 = 0.0448
+  # Baseline path uses the ACM 2005 design-condition infiltration rate (flat).
+  ACM_INFILTRATION_RATE_BASELINE_CFM_PER_FT2 = 0.038
   NON_ACM_REHEAT_MAX_AIR_TEMPERATURE_C = 43.3
   REHEAT_HIGH_OCC_MIN_DENSITY_PPL_PER_M2 = 0.269
   REHEAT_HIGH_OCC_MIN_PEOPLE = 50.0
@@ -815,7 +817,7 @@ class ACM179dACM2019
       acm_standard.model_get_infiltration_coefficients(model)
     end
     prm_standard.define_singleton_method(:model_apply_standard_infiltration) do |model, infiltration_rate: nil|
-      acm_standard.model_apply_standard_infiltration(model, infiltration_rate:, prm_standard:)
+      acm_standard.model_apply_standard_infiltration(model, infiltration_rate:, prm_standard:, rate_cfm_per_ft2: ACM_INFILTRATION_RATE_BASELINE_CFM_PER_FT2)
     end
     prm_standard.define_singleton_method(:__model_get_primary_building_type) do |model|
       acm_standard.__model_get_primary_building_type(model)
@@ -951,9 +953,9 @@ class ACM179dACM2019
   # How: computes total conditioned exterior wall area, then delegates object
   # creation to the vanilla PRM space helper.
   # Used by: create-typical directly and HVAC-control proposed normalization.
-  def model_apply_standard_infiltration(model, infiltration_rate: nil, prm_standard: Standard.build(PRM_2019_TEMPLATE))
+  def model_apply_standard_infiltration(model, infiltration_rate: nil, prm_standard: Standard.build(PRM_2019_TEMPLATE), rate_cfm_per_ft2: ACM_INFILTRATION_RATE_CFM_PER_FT2)
     unless infiltration_rate.nil?
-      OpenStudio.logFree(OpenStudio::Debug, '179d.acm.Model', "Ignoring upstream infiltration_rate #{infiltration_rate}; ACM 2019 rate is fixed.")
+      OpenStudio.logFree(OpenStudio::Debug, '179d.acm.Model', "Ignoring upstream infiltration_rate #{infiltration_rate}; ACM rate is fixed.")
     end
 
     ela = model.getSpaceInfiltrationEffectiveLeakageAreas.sort.size
@@ -961,7 +963,7 @@ class ACM179dACM2019
       OpenStudio.logFree(OpenStudio::Warn, 'prm.log', 'The current model cannot include SpaceInfiltrationEffectiveLeakageArea. These objects will be skipped in modeling infiltration according to the 90.1-PRM rules.')
     end
 
-    acm_infil_rate_m3_per_s_per_m2 = OpenStudio.convert(ACM_INFILTRATION_RATE_CFM_PER_FT2, 'cfm/ft^2', 'm^3/s*m^2').get
+    acm_infil_rate_m3_per_s_per_m2 = OpenStudio.convert(rate_cfm_per_ft2, 'cfm/ft^2', 'm^3/s*m^2').get
     total_exterior_wall_area_m2 = 0.0
     model.getSpaces.sort_by(&:nameString).each do |space|
       next if prm_call(prm_standard, :space_conditioning_category, space) == 'Unconditioned'
