@@ -18,4 +18,11 @@ class ACM179dACM2005 < ACM179dACM2019
   def acm_data_files
     [ACM_SCHEDULES_FILE, ACM_SPACE_TYPES_FILE]
   end
+
+  # The ACM 2005 school schedules already model the summer break, so there is no
+  # prototype schedule to preserve: the baseline applies the ACM 2005 (2007
+  # prototype) lighting and SWH schedules to PrimarySchool/SecondarySchool too.
+  def acm_space_type_keeps_prototype_schedule?(_space_type)
+    false
+  end
 end
