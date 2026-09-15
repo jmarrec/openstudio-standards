@@ -387,6 +387,19 @@ class ACM179dACM2019
     true
   end
 
+  # Building types whose prototype schedules model the summer break the flat ACM
+  # schedules do not; for these we keep the prototype load schedules.
+  ACM_PROTOTYPE_SCHEDULE_BUILDING_TYPES = ['PrimarySchool', 'SecondarySchool'].freeze
+
+  # True when the space type belongs to a school, so ACM leaves its lighting,
+  # occupancy, equipment, and SWH schedules on the prototype (summer-break)
+  # values. ACM densities are still applied.
+  def acm_space_type_keeps_prototype_schedule?(space_type)
+    return false unless space_type.standardsBuildingType.is_initialized
+
+    ACM_PROTOTYPE_SCHEDULE_BUILDING_TYPES.include?(space_type.standardsBuildingType.get)
+  end
+
   def model_apply_acm_people(model, building_type: nil)
     count_people = 0
 
@@ -413,12 +426,13 @@ class ACM179dACM2019
 
       occupancy_schedule = model_add_schedule(model, acm_data['occupancy_schedule'])
       activity_schedule = model_add_schedule(model, acm_data['occupancy_activity_schedule'])
+      keep_schedule = acm_space_type_keeps_prototype_schedule?(space_type)
 
       people_objects.each do |people_object|
         people_definition = people_object.peopleDefinition
         people_definition.setPeopleperSpaceFloorArea(acm_occupancy_per_area_si(acm_data['occupancy_per_area']))
         people_definition.setSensibleHeatFraction(acm_data['occupancy_fraction_sensible'].to_f)
-        people_object.setNumberofPeopleSchedule(occupancy_schedule)
+        people_object.setNumberofPeopleSchedule(occupancy_schedule) unless keep_schedule && people_object.numberofPeopleSchedule.is_initialized
         people_object.setActivityLevelSchedule(activity_schedule)
         count_people += 1
       end
@@ -471,6 +485,7 @@ class ACM179dACM2019
       end
 
       electric_density_w_per_m2 = acm_electric_equipment_per_area_si(acm_data['electric_equipment_per_area'])
+      keep_schedule = acm_space_type_keeps_prototype_schedule?(space_type)
       if electric_objects.empty? && acm_data['electric_equipment_per_area'].to_f.positive? && space_type.floorArea.positive?
         definition = OpenStudio::Model::ElectricEquipmentDefinition.new(model)
         definition.setName("#{space_type.nameString} ACM Electric Equipment Definition")
@@ -484,7 +499,7 @@ class ACM179dACM2019
         electric_schedule = model_add_schedule(model, acm_data['electric_equipment_schedule'])
         electric_objects.each do |equipment_object|
           equipment_object.electricEquipmentDefinition.setWattsperSpaceFloorArea(electric_density_w_per_m2)
-          equipment_object.setSchedule(electric_schedule)
+          equipment_object.setSchedule(electric_schedule) unless keep_schedule && equipment_object.schedule.is_initialized
           count_electric += 1
         end
       end
@@ -493,7 +508,7 @@ class ACM179dACM2019
 
       gas_schedule = model_add_schedule(model, acm_data['gas_equipment_schedule'])
       gas_objects.each do |equipment_object|
-        equipment_object.setSchedule(gas_schedule)
+        equipment_object.setSchedule(gas_schedule) unless keep_schedule && equipment_object.schedule.is_initialized
         count_gas += 1
       end
     end
@@ -563,7 +578,7 @@ class ACM179dACM2019
       equipment.setName("#{space_type.nameString} ACM Service Water Use")
       spaces = model.getSpaces.select { |space| space.spaceType.is_initialized && space.spaceType.get == space_type }
       equipment.setSpace(spaces.max_by(&:floorArea)) unless spaces.empty?
-      water_use_by_space_type[space_type.handle.to_s] = { space_type:, water_use_equipment: [equipment] }
+      water_use_by_space_type[space_type.handle.to_s] = { space_type:, water_use_equipment: [equipment], created_by_acm: true }
     end
 
     water_use_by_space_type.each_value do |entry|
@@ -582,6 +597,10 @@ class ACM179dACM2019
       end
 
       schedule = model_add_schedule(model, acm_data['service_water_heating_schedule'])
+      # Keep the prototype (summer-break) schedule only on SWH that predates ACM;
+      # WaterUseEquipment auto-populates a default schedule, so ACM-created
+      # equipment still takes the ACM schedule.
+      keep_schedule = acm_space_type_keeps_prototype_schedule?(space_type) && !entry[:created_by_acm]
       peak_flow_rate_m3_per_s = acm_swh_peak_flow_rate_si(acm_data['service_water_heating_peak_flow_per_area'], floor_area_m2)
       existing_peak_flow_rate_m3_per_s = water_use_equipment.sum { |equipment| equipment.waterUseEquipmentDefinition.peakFlowRate }
       fallback_split = 1.0 / water_use_equipment.size
@@ -589,7 +608,7 @@ class ACM179dACM2019
       water_use_equipment.each do |equipment|
         ratio = existing_peak_flow_rate_m3_per_s.positive? ? equipment.waterUseEquipmentDefinition.peakFlowRate / existing_peak_flow_rate_m3_per_s : fallback_split
         equipment.waterUseEquipmentDefinition.setPeakFlowRate(peak_flow_rate_m3_per_s * ratio)
-        equipment.setFlowRateFractionSchedule(schedule)
+        equipment.setFlowRateFractionSchedule(schedule) unless keep_schedule
         count += 1
       end
     end
@@ -691,6 +710,7 @@ class ACM179dACM2019
     model.getSpaceTypes.sort.each do |space_type|
       lights = space_type.lights
       next if lights.empty?
+      next if acm_space_type_keeps_prototype_schedule?(space_type)
 
       schedule_name = space_type_get_acm_standards_data(space_type, throw_if_not_found: false)['lighting_schedule']
       next if schedule_name.nil? || schedule_name.empty?
