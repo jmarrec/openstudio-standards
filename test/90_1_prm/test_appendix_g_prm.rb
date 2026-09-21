@@ -186,7 +186,7 @@ class AppendixGPRMTests < Minitest::Test
 
   def test_pe_userdata_handling
     model_hash = prm_test_helper('pe_userdata_handling', require_prototype = false, require_baseline = true)
-    
+
     check_power_equipment_handling(model_hash['baseline'])
   end
 
@@ -256,10 +256,35 @@ class AppendixGPRMTests < Minitest::Test
     check_wwr(model_hash['baseline'])
   end
 
-
   def test_swh_single_building_type
-    model_hash = prm_test_helper('swh_single_building_type', require_prototype=false, require_baseline=true)
-    check_swh_single_building_type(model_hash["baseline"])
+    model_hash = prm_test_helper('swh_single_building_type', require_prototype = false, require_baseline = true)
+    check_swh_single_building_type(model_hash['baseline'])
+  end
+
+  def test_swh_efficiency_applied_after_electric_baseline_fuel
+    standard = Standard.build('90.1-PRM-2019')
+    water_heater = make_prm_test_water_heater('NaturalGas')
+    requirement = standard.water_heater_mixed_get_efficiency_requirement(water_heater, 'Electricity', 120_000.0, 150.0)
+
+    assert_equal('Water Heaters', requirement['product_class'])
+    assert(standard.model_apply_water_heater_prm_parameter(water_heater, 'Retail'))
+    assert_equal('Electricity', water_heater.heaterFuelType)
+    assert_in_delta(1.0, water_heater.heaterThermalEfficiency.get, 0.001)
+    assert_equal('Electricity', water_heater.onCycleParasiticFuelType.get)
+    assert_equal('Electricity', water_heater.offCycleParasiticFuelType.get)
+  end
+
+  def test_swh_efficiency_uses_gas_rules_for_gas_baseline_fuel
+    standard = Standard.build('90.1-PRM-2019')
+    water_heater = make_prm_test_water_heater('Electricity')
+    requirement = standard.water_heater_mixed_get_efficiency_requirement(water_heater, 'NaturalGas', 120_000.0, 150.0)
+
+    assert_equal('Storage Water Heater', requirement['product_class'])
+    assert(standard.model_apply_water_heater_prm_parameter(water_heater, 'All others'))
+    assert_equal('NaturalGas', water_heater.heaterFuelType)
+    refute_in_delta(1.0, water_heater.heaterThermalEfficiency.get, 0.001)
+    assert_equal('NaturalGas', water_heater.onCycleParasiticFuelType.get)
+    assert_equal('NaturalGas', water_heater.offCycleParasiticFuelType.get)
   end
 
   def test_pri_sec_loop_configuration
@@ -268,5 +293,15 @@ class AppendixGPRMTests < Minitest::Test
     check_pri_sec_loop(model_hash['baseline'])
   end
 
+  def make_prm_test_water_heater(initial_fuel)
+    model = OpenStudio::Model::Model.new
+    water_heater = OpenStudio::Model::WaterHeaterMixed.new(model)
+    water_heater.setName('PRM test water heater')
+    water_heater.setHeaterFuelType(initial_fuel)
+    water_heater.setHeaterMaximumCapacity(OpenStudio.convert(120_000.0, 'Btu/hr', 'W').get)
+    water_heater.setTankVolume(OpenStudio.convert(150.0, 'gal', 'm^3').get)
+    water_heater.setOnCycleParasiticFuelType(initial_fuel)
+    water_heater.setOffCycleParasiticFuelType(initial_fuel)
+    water_heater
+  end
 end
-
