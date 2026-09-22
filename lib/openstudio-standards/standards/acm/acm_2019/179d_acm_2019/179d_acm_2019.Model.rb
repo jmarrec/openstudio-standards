@@ -848,12 +848,57 @@ class ACM179dACM2019
     prm_standard.define_singleton_method(:model_remap_office) do |model, floor_area|
       acm_standard.model_remap_office(model, floor_area)
     end
+    prm_standard.define_singleton_method(:model_apply_water_heater_prm_parameter) do |water_heater_mixed, building_type_swh|
+      new_fuel = water_heater_mixed_apply_prm_baseline_fuel_type(building_type_swh)
+      water_heater_mixed.setHeaterFuelType(new_fuel)
+      if water_heater_mixed_apply_efficiency(water_heater_mixed)
+        OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.WaterHeaterMixed', "For #{water_heater_mixed.name}, changed baseline water heater fuel to #{new_fuel}.")
+        true
+      else
+        OpenStudio.logFree(OpenStudio::Warn, 'openstudio.standards.WaterHeaterMixed', "For #{water_heater_mixed.name}, could not apply baseline water heater efficiency after changing fuel to #{new_fuel}.")
+        false
+      end
+    end
+    prm_standard.define_singleton_method(:water_heater_mixed_get_efficiency_requirement) do |water_heater_mixed, fuel_type, capacity_btu_per_hr, volume_gal|
+      acm_standard.prm_2019_water_heater_efficiency_requirement(prm_standard, water_heater_mixed, fuel_type, capacity_btu_per_hr, volume_gal)
+    end
     prm_standard.define_singleton_method(:air_loop_hvac_apply_prm_baseline_fan_power) do |air_loop_hvac|
       acm_standard.ensure_prm_fan_power_features(air_loop_hvac, prm_standard)
       prm_fan_power_method.call(air_loop_hvac)
     end
 
     prm_standard
+  end
+
+  def prm_2019_water_heater_efficiency_requirement(prm_standard, _water_heater_mixed, fuel_type, capacity_btu_per_hr, volume_gal)
+    search_criteria = {
+      'template' => prm_standard.template,
+      'fuel_type' => fuel_type,
+      'product_class' => prm_2019_storage_water_heater_product_class(fuel_type)
+    }
+
+    wh_props = prm_2019_find_water_heater_efficiency_requirement(prm_standard, search_criteria, capacity_btu_per_hr, volume_gal)
+    return wh_props unless wh_props == {}
+
+    search_criteria['draw_profile'] = 'medium'
+    prm_2019_find_water_heater_efficiency_requirement(prm_standard, search_criteria, capacity_btu_per_hr, volume_gal)
+  end
+
+  def prm_2019_find_water_heater_efficiency_requirement(prm_standard, search_criteria, capacity_btu_per_hr, volume_gal)
+    [
+      prm_standard.model_find_objects(prm_standard.standards_data['water_heaters'], search_criteria, capacity_btu_per_hr),
+      prm_standard.model_find_objects(prm_standard.standards_data['water_heaters'], search_criteria, capacity_btu_per_hr, nil, nil, nil, nil, volume_gal.round(0)),
+      prm_standard.model_find_objects(prm_standard.standards_data['water_heaters'], search_criteria, capacity_btu_per_hr, nil, nil, nil, nil, nil, capacity_btu_per_hr),
+      prm_standard.model_find_objects(prm_standard.standards_data['water_heaters'], search_criteria, capacity_btu_per_hr, nil, nil, nil, nil, volume_gal, capacity_btu_per_hr / volume_gal)
+    ].each do |rows|
+      return rows[0] if rows.size == 1
+    end
+
+    {}
+  end
+
+  def prm_2019_storage_water_heater_product_class(fuel_type)
+    fuel_type == 'Electricity' ? 'Water Heaters' : 'Storage Water Heater'
   end
 
   # EnergyPlus only fills the Standard 62.1 Summary Vot when Sizing:System OA is
