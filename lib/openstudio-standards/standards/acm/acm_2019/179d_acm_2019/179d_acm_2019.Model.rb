@@ -244,6 +244,7 @@ class ACM179dACM2019
   ACM_EXHAUST_HIGH_REHEAT_DESIGN_SAT_C = 50.0
   ACM_EXHAUST_SPACE_TYPES_PRM_2019 = ['Kitchen', 'Restroom', 'Cafeteria'].freeze
   ACM_INFILTRATION_RATE_CFM_PER_FT2 = 0.0448
+  SIZING_ONLY_INFILTRATION_FEATURE = '179d_sizing_only_infiltration'.freeze
   # Baseline path uses the ACM 2005 design-condition infiltration rate (flat).
   ACM_INFILTRATION_RATE_BASELINE_CFM_PER_FT2 = 0.038
   NON_ACM_REHEAT_MAX_AIR_TEMPERATURE_C = 43.3
@@ -1206,6 +1207,7 @@ class ACM179dACM2019
         infiltration = OpenStudio::Model::SpaceInfiltrationDesignFlowRate.new(model)
         infiltration.setName("#{space.nameString} Design Day Only Infiltration")
         infiltration.setSpace(space)
+        infiltration.additionalProperties.setFeature(SIZING_ONLY_INFILTRATION_FEATURE, true)
         infiltration.setSchedule(ddy_only_infiltration_schedule(model))
         if space.designSpecificationOutdoorAir.is_initialized
           infiltration.setFlowperSpaceFloorArea(space_get_outdoor_airflow_rate(space) / space.floorArea)
