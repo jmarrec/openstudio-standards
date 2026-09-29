@@ -1134,19 +1134,14 @@ class ACM179dACM2019
     :to_ZoneHVACTerminalUnitVariableRefrigerantFlow
   ].freeze
 
-  # Why: heated-only zones served only by unit heaters can otherwise lose design
-  # outdoor air in both baseline and proposed paths.
-  # What: adds equivalent ZoneVentilation to those heated-only zones.
-  # How: finds unit-heater zones without air loops, existing zone ventilation, or
-  # any OA-providing zone unit (PTAC/PTHP/WSHP/FanCoil/VRF).
-  # Used by: baseline post-overrides and proposed normalization.
+  # Adds equivalent outdoor air to heated-only zones without another OA source.
   def add_heated_only_zone_ventilation(model)
     heated_only_zones = model.getThermalZones.select do |zone|
       next false unless zone.airLoopHVACs.empty?
       next false if zone.equipment.any? { |equipment| equipment.to_ZoneVentilationDesignFlowRate.is_initialized }
       next false if zone.equipment.any? { |equipment| OA_PROVIDING_ZONE_HVAC_METHODS.any? { |meth| equipment.send(meth).is_initialized } }
 
-      zone.equipment.any? { |equipment| equipment.to_ZoneHVACUnitHeater.is_initialized }
+      OpenstudioStandards::ThermalZone.thermal_zone_heated?(zone) && !OpenstudioStandards::ThermalZone.thermal_zone_cooled?(zone)
     end
     return if heated_only_zones.empty?
 
