@@ -928,7 +928,8 @@ class ACM179dACM2019
   # What: normalizes retained proposed HVAC without rebuilding it or applying
   # standard equipment efficiency.
   # How: calls vanilla PRM methods through prm_standard, with ACM hooks around
-  # infiltration, DCV, exhaust makeup, heated-only ventilation, and reheat fixes.
+  # infiltration, DCV, exhaust makeup, and reheat fixes. Heated-only ventilation
+  # is added earlier by create_typical_building_from_model_comstock.
   # Used by: the HVAC-control measure for PRM-2019 proposed normalization.
   def model_create_179d_proposed_normalization(model, climate_zone, hvac_building_type = 'other nonresidential', sizing_run_dir = Dir.pwd, _debug: false, prm_standard: Standard.build(PRM_2019_TEMPLATE))
     prm_standard = prepare_prm_standard_for_acm_overrides(prm_standard)
@@ -1000,7 +1001,6 @@ class ACM179dACM2019
     apply_acm_exhaust_reheat_coil_capacity_floor(model)
     apply_non_acm_reheat_max_air_temperature_headroom(model)
     apply_non_acm_reheat_max_flow_during_reheat(model)
-    add_heated_only_zone_ventilation(model)
 
     true
   end
