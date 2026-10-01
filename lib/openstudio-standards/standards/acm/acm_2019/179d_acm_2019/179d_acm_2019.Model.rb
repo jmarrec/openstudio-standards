@@ -840,6 +840,10 @@ class ACM179dACM2019
     prm_standard.define_singleton_method(:model_apply_standard_infiltration) do |model, infiltration_rate: nil|
       acm_standard.model_apply_standard_infiltration(model, infiltration_rate:, prm_standard:, rate_cfm_per_ft2: ACM_INFILTRATION_RATE_BASELINE_CFM_PER_FT2)
     end
+    prm_sizing_schedule_method = prm_standard.method(:model_apply_prm_baseline_sizing_schedule)
+    prm_standard.define_singleton_method(:model_apply_prm_baseline_sizing_schedule) do |model|
+      prm_sizing_schedule_method.call(model).tap { acm_standard.restore_design_day_only_infiltration_design_days(model) }
+    end
     prm_standard.define_singleton_method(:__model_get_primary_building_type) do |model|
       acm_standard.__model_get_primary_building_type(model)
     end
@@ -1042,7 +1046,11 @@ class ACM179dACM2019
     tot_infil_m3_per_s = acm_infil_rate_m3_per_s_per_m2 * total_exterior_wall_area_m2
     infiltration_coefficients = model_get_infiltration_coefficients(model)
     model.getSpaces.sort_by(&:nameString).each do |space|
+      # The PRM helper removes every space infiltration object, so set sizing-only ones aside and re-add them.
+      sizing_only = space.spaceInfiltrationDesignFlowRates.select { |infil| sizing_only_infiltration?(infil) }
+      sizing_only.each(&:remove)
       prm_call(prm_standard, :space_apply_infiltration_rate, space, tot_infil_m3_per_s, 'Flow/ExteriorWallArea', infiltration_coefficients)
+      add_design_day_only_infiltration(space) unless sizing_only.empty?
     end
     model.getSpaceTypes.sort_by(&:nameString).each do |space_type|
       space_type.spaceInfiltrationDesignFlowRates.each(&:remove)
@@ -1197,20 +1205,31 @@ class ACM179dACM2019
       next unless ensure_ddy_infiltration
 
       zone.spaces.each do |space|
-        next if space.infiltrationDesignAirChangesPerHour > 0.001
-
-        infiltration = OpenStudio::Model::SpaceInfiltrationDesignFlowRate.new(model)
-        infiltration.setName("#{space.nameString} Design Day Only Infiltration")
-        infiltration.setSpace(space)
-        infiltration.additionalProperties.setFeature(SIZING_ONLY_INFILTRATION_FEATURE, true)
-        infiltration.setSchedule(ddy_only_infiltration_schedule(model))
-        if space.designSpecificationOutdoorAir.is_initialized
-          infiltration.setFlowperSpaceFloorArea(space_get_outdoor_airflow_rate(space) / space.floorArea)
-        else
-          infiltration.setAirChangesperHour(0.01)
-        end
+        add_design_day_only_infiltration(space) unless space.infiltrationDesignAirChangesPerHour > 0.001
       end
     end
+  end
+
+  # True when the infiltration object was created only for design-day sizing.
+  def sizing_only_infiltration?(infiltration)
+    feature = infiltration.additionalProperties.getFeatureAsBoolean(SIZING_ONLY_INFILTRATION_FEATURE)
+    feature.is_initialized && feature.get
+  end
+
+  # Adds a design-day-only infiltration object (flagged as sizing-only) to a space.
+  def add_design_day_only_infiltration(space)
+    model = space.model
+    infiltration = OpenStudio::Model::SpaceInfiltrationDesignFlowRate.new(model)
+    infiltration.setName("#{space.nameString} Design Day Only Infiltration")
+    infiltration.setSpace(space)
+    infiltration.additionalProperties.setFeature(SIZING_ONLY_INFILTRATION_FEATURE, true)
+    infiltration.setSchedule(ddy_only_infiltration_schedule(model))
+    if space.designSpecificationOutdoorAir.is_initialized
+      infiltration.setFlowperSpaceFloorArea(space_get_outdoor_airflow_rate(space) / space.floorArea)
+    else
+      infiltration.setAirChangesperHour(0.01)
+    end
+    infiltration
   end
 
   # Why: the rebuilt PRM baseline can change total design outdoor air from the
@@ -1510,6 +1529,14 @@ class ACM179dACM2019
     schedule = OpenStudio::Model::ScheduleRuleset.new(model, 0.0)
     schedule.setName(schedule_name)
     schedule.defaultDaySchedule.setName("#{schedule_name} Default Day")
+    set_ddy_only_design_days(schedule)
+    schedule
+  end
+
+  # Sets both design days of a ruleset to 1.0.
+  def set_ddy_only_design_days(schedule)
+    model = schedule.model
+    schedule_name = schedule.nameString
     winter_day = OpenStudio::Model::ScheduleDay.new(model)
     schedule.setWinterDesignDaySchedule(winter_day)
     winter_day.remove
@@ -1520,7 +1547,22 @@ class ACM179dACM2019
     summer_day.remove
     schedule.summerDesignDaySchedule.setName("#{schedule_name} Summer Design Day")
     schedule.summerDesignDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 1.0)
-    schedule
+  end
+
+  # PRM design-day sizing resets each infiltration schedule's design days to its
+  # annual max (0 for the sizing-only schedule); put them back to 1.0.
+  def restore_design_day_only_infiltration_design_days(model)
+    model.getSpaceInfiltrationDesignFlowRates.select { |infil| sizing_only_infiltration?(infil) }.each do |infil|
+      next unless infil.schedule.is_initialized
+
+      ruleset = infil.schedule.get.to_ScheduleRuleset
+      next unless ruleset.is_initialized
+
+      ruleset = ruleset.get
+      next if ruleset.winterDesignDaySchedule.values == [1.0] && ruleset.summerDesignDaySchedule.values == [1.0]
+
+      set_ddy_only_design_days(ruleset)
+    end
   end
 
   # Why: design-day infiltration for heated-only ventilation needs each space OA.
