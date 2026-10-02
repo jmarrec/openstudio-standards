@@ -840,6 +840,10 @@ class ACM179dACM2019
     prm_standard.define_singleton_method(:model_apply_standard_infiltration) do |model, infiltration_rate: nil|
       acm_standard.model_apply_standard_infiltration(model, infiltration_rate:, prm_standard:, rate_cfm_per_ft2: ACM_INFILTRATION_RATE_BASELINE_CFM_PER_FT2)
     end
+    prm_sizing_schedule_method = prm_standard.method(:model_apply_prm_baseline_sizing_schedule)
+    prm_standard.define_singleton_method(:model_apply_prm_baseline_sizing_schedule) do |model|
+      prm_sizing_schedule_method.call(model).tap { acm_standard.restore_design_day_only_infiltration_design_days(model) }
+    end
     prm_standard.define_singleton_method(:__model_get_primary_building_type) do |model|
       acm_standard.__model_get_primary_building_type(model)
     end
@@ -928,7 +932,8 @@ class ACM179dACM2019
   # What: normalizes retained proposed HVAC without rebuilding it or applying
   # standard equipment efficiency.
   # How: calls vanilla PRM methods through prm_standard, with ACM hooks around
-  # infiltration, DCV, exhaust makeup, heated-only ventilation, and reheat fixes.
+  # infiltration, DCV, exhaust makeup, and reheat fixes. Heated-only ventilation
+  # is added earlier by create_typical_building_from_model_comstock.
   # Used by: the HVAC-control measure for PRM-2019 proposed normalization.
   def model_create_179d_proposed_normalization(model, climate_zone, hvac_building_type = 'other nonresidential', sizing_run_dir = Dir.pwd, _debug: false, prm_standard: Standard.build(PRM_2019_TEMPLATE))
     prm_standard = prepare_prm_standard_for_acm_overrides(prm_standard)
@@ -1000,7 +1005,6 @@ class ACM179dACM2019
     apply_acm_exhaust_reheat_coil_capacity_floor(model)
     apply_non_acm_reheat_max_air_temperature_headroom(model)
     apply_non_acm_reheat_max_flow_during_reheat(model)
-    add_heated_only_zone_ventilation(model)
 
     true
   end
@@ -1042,7 +1046,16 @@ class ACM179dACM2019
     tot_infil_m3_per_s = acm_infil_rate_m3_per_s_per_m2 * total_exterior_wall_area_m2
     infiltration_coefficients = model_get_infiltration_coefficients(model)
     model.getSpaces.sort_by(&:nameString).each do |space|
+      # The PRM helper removes every space infiltration object, so set sizing-only ones aside and
+      # re-add them only where the rebuilt space-level infiltration is still negligible. Space-type
+      # infiltration is ignored here: the helper reads its schedule, and it is removed below.
+      sizing_only = space.spaceInfiltrationDesignFlowRates.select { |infil| sizing_only_infiltration?(infil) }
+      sizing_only.each(&:remove)
       prm_call(prm_standard, :space_apply_infiltration_rate, space, tot_infil_m3_per_s, 'Flow/ExteriorWallArea', infiltration_coefficients)
+      next if sizing_only.empty?
+
+      rebuilt_flow = space.spaceInfiltrationDesignFlowRates.sum { |infil| infil.flowperExteriorWallArea.is_initialized ? infil.flowperExteriorWallArea.get : 0.0 }
+      add_design_day_only_infiltration(space) unless rebuilt_flow.positive? && space.exteriorWallArea.positive?
     end
     model.getSpaceTypes.sort_by(&:nameString).each do |space_type|
       space_type.spaceInfiltrationDesignFlowRates.each(&:remove)
@@ -1134,11 +1147,13 @@ class ACM179dACM2019
     :to_ZoneHVACTerminalUnitVariableRefrigerantFlow
   ].freeze
 
-  # Why: heated-only zones served only by unit heaters can otherwise lose design
-  # outdoor air in both baseline and proposed paths.
-  # What: adds equivalent ZoneVentilation to those heated-only zones.
-  # How: finds unit-heater zones without air loops, existing zone ventilation, or
-  # any OA-providing zone unit (PTAC/PTHP/WSHP/FanCoil/VRF).
+  # Why: heated-only zones have no air loop, so the baseline and proposed models
+  # need an explicit, matching outdoor air source for them.
+  # What: adds equivalent ZoneVentilation to every zone that is heated but not
+  # cooled, has no air loop, and has no other OA source.
+  # How: selects zones by thermal_zone_heated?/thermal_zone_cooled? rather than
+  # by equipment type, so baseboard and radiant zones qualify too; skips zones
+  # that already have ZoneVentilation or an OA-delivering zone HVAC unit.
   # Used by: baseline post-overrides and proposed normalization.
   def add_heated_only_zone_ventilation(model)
     heated_only_zones = model.getThermalZones.select do |zone|
@@ -1146,7 +1161,7 @@ class ACM179dACM2019
       next false if zone.equipment.any? { |equipment| equipment.to_ZoneVentilationDesignFlowRate.is_initialized }
       next false if zone.equipment.any? { |equipment| OA_PROVIDING_ZONE_HVAC_METHODS.any? { |meth| equipment.send(meth).is_initialized } }
 
-      zone.equipment.any? { |equipment| equipment.to_ZoneHVACUnitHeater.is_initialized }
+      OpenstudioStandards::ThermalZone.thermal_zone_heated?(zone) && !OpenstudioStandards::ThermalZone.thermal_zone_cooled?(zone)
     end
     return if heated_only_zones.empty?
 
@@ -1202,20 +1217,31 @@ class ACM179dACM2019
       next unless ensure_ddy_infiltration
 
       zone.spaces.each do |space|
-        next if space.infiltrationDesignAirChangesPerHour > 0.001
-
-        infiltration = OpenStudio::Model::SpaceInfiltrationDesignFlowRate.new(model)
-        infiltration.setName("#{space.nameString} Design Day Only Infiltration")
-        infiltration.setSpace(space)
-        infiltration.additionalProperties.setFeature(SIZING_ONLY_INFILTRATION_FEATURE, true)
-        infiltration.setSchedule(ddy_only_infiltration_schedule(model))
-        if space.designSpecificationOutdoorAir.is_initialized
-          infiltration.setFlowperSpaceFloorArea(space_get_outdoor_airflow_rate(space) / space.floorArea)
-        else
-          infiltration.setAirChangesperHour(0.01)
-        end
+        add_design_day_only_infiltration(space) unless space.infiltrationDesignAirChangesPerHour > 0.001
       end
     end
+  end
+
+  # True when the infiltration object was created only for design-day sizing.
+  def sizing_only_infiltration?(infiltration)
+    feature = infiltration.additionalProperties.getFeatureAsBoolean(SIZING_ONLY_INFILTRATION_FEATURE)
+    feature.is_initialized && feature.get
+  end
+
+  # Adds a design-day-only infiltration object (flagged as sizing-only) to a space.
+  def add_design_day_only_infiltration(space)
+    model = space.model
+    infiltration = OpenStudio::Model::SpaceInfiltrationDesignFlowRate.new(model)
+    infiltration.setName("#{space.nameString} Design Day Only Infiltration")
+    infiltration.setSpace(space)
+    infiltration.additionalProperties.setFeature(SIZING_ONLY_INFILTRATION_FEATURE, true)
+    infiltration.setSchedule(ddy_only_infiltration_schedule(model))
+    if space.designSpecificationOutdoorAir.is_initialized
+      infiltration.setFlowperSpaceFloorArea(space_get_outdoor_airflow_rate(space) / space.floorArea)
+    else
+      infiltration.setAirChangesperHour(0.01)
+    end
+    infiltration
   end
 
   # Why: the rebuilt PRM baseline can change total design outdoor air from the
@@ -1515,6 +1541,14 @@ class ACM179dACM2019
     schedule = OpenStudio::Model::ScheduleRuleset.new(model, 0.0)
     schedule.setName(schedule_name)
     schedule.defaultDaySchedule.setName("#{schedule_name} Default Day")
+    set_ddy_only_design_days(schedule)
+    schedule
+  end
+
+  # Sets both design days of a ruleset to 1.0.
+  def set_ddy_only_design_days(schedule)
+    model = schedule.model
+    schedule_name = schedule.nameString
     winter_day = OpenStudio::Model::ScheduleDay.new(model)
     schedule.setWinterDesignDaySchedule(winter_day)
     winter_day.remove
@@ -1525,7 +1559,22 @@ class ACM179dACM2019
     summer_day.remove
     schedule.summerDesignDaySchedule.setName("#{schedule_name} Summer Design Day")
     schedule.summerDesignDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 1.0)
-    schedule
+  end
+
+  # PRM design-day sizing resets each infiltration schedule's design days to its
+  # annual max (0 for the sizing-only schedule); put them back to 1.0.
+  def restore_design_day_only_infiltration_design_days(model)
+    model.getSpaceInfiltrationDesignFlowRates.select { |infil| sizing_only_infiltration?(infil) }.each do |infil|
+      next unless infil.schedule.is_initialized
+
+      ruleset = infil.schedule.get.to_ScheduleRuleset
+      next unless ruleset.is_initialized
+
+      ruleset = ruleset.get
+      next if ruleset.winterDesignDaySchedule.values == [1.0] && ruleset.summerDesignDaySchedule.values == [1.0]
+
+      set_ddy_only_design_days(ruleset)
+    end
   end
 
   # Why: design-day infiltration for heated-only ventilation needs each space OA.
