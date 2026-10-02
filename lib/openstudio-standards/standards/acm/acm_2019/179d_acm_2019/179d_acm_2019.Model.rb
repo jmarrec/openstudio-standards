@@ -1045,6 +1045,10 @@ class ACM179dACM2019
 
     tot_infil_m3_per_s = acm_infil_rate_m3_per_s_per_m2 * total_exterior_wall_area_m2
     infiltration_coefficients = model_get_infiltration_coefficients(model)
+    # Removed first so the re-add guard below sees only the rebuilt space-level infiltration.
+    model.getSpaceTypes.sort_by(&:nameString).each do |space_type|
+      space_type.spaceInfiltrationDesignFlowRates.each(&:remove)
+    end
     model.getSpaces.sort_by(&:nameString).each do |space|
       # The PRM helper removes every space infiltration object, so set sizing-only ones aside and
       # re-add them only where the rebuilt infiltration is still negligible.
@@ -1052,9 +1056,6 @@ class ACM179dACM2019
       sizing_only.each(&:remove)
       prm_call(prm_standard, :space_apply_infiltration_rate, space, tot_infil_m3_per_s, 'Flow/ExteriorWallArea', infiltration_coefficients)
       add_design_day_only_infiltration(space) unless sizing_only.empty? || space.infiltrationDesignAirChangesPerHour > 0.001
-    end
-    model.getSpaceTypes.sort_by(&:nameString).each do |space_type|
-      space_type.spaceInfiltrationDesignFlowRates.each(&:remove)
     end
 
     true
