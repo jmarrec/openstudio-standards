@@ -225,6 +225,38 @@ module ACM179dWinterSolarDesignDay
                   :epw_day_schedule
 end
 
+module ACM179dWarehouseVentilation
+  ASHRAE_62_1_2019_WAREHOUSE_VENTILATION_IP = {
+    'Bulk' => { cfm_per_person: 10.0, cfm_per_ft2: 0.06 },
+    'Fine' => { cfm_per_person: 10.0, cfm_per_ft2: 0.06 },
+    'Office' => { cfm_per_person: 5.0, cfm_per_ft2: 0.06 },
+  }.freeze
+
+  # Applies the 62.1-2019 Table 6-1 rates to Warehouse DSOAs.
+  def model_apply_ashrae_62_1_2019_warehouse_ventilation(model)
+    updated = 0
+    model.getSpaceTypes.sort_by(&:nameString).each do |space_type|
+      next unless space_type.standardsBuildingType.is_initialized
+      next unless space_type.standardsBuildingType.get == 'Warehouse'
+      next unless space_type.standardsSpaceType.is_initialized
+
+      rates = ASHRAE_62_1_2019_WAREHOUSE_VENTILATION_IP[space_type.standardsSpaceType.get]
+      next if rates.nil?
+
+      dsoa = space_type.designSpecificationOutdoorAir
+      raise "Warehouse space type '#{space_type.nameString}' is missing a design specification outdoor air object." unless dsoa.is_initialized
+
+      dsoa = dsoa.get
+      dsoa.setOutdoorAirFlowperPerson(OpenStudio.convert(rates[:cfm_per_person], 'ft^3/min*person', 'm^3/s*person').get)
+      dsoa.setOutdoorAirFlowperFloorArea(OpenStudio.convert(rates[:cfm_per_ft2], 'ft^3/min*ft^2', 'm^3/s*m^2').get)
+      updated += 1
+    end
+
+    OpenStudio.logFree(OpenStudio::Info, '179d.acm.Model', "Applied 62.1-2019 ventilation rates to #{updated} Warehouse space type(s).")
+    updated.positive?
+  end
+end
+
 class ACM179dACM2019
   include ACM179dPRMFanPowerMetadata
 
@@ -1776,4 +1808,8 @@ class ACM179dACM2019
       'u_value' => window_u_value,
     }
   end
+end
+
+class ACM179dACM2019
+  include ACM179dWarehouseVentilation
 end
