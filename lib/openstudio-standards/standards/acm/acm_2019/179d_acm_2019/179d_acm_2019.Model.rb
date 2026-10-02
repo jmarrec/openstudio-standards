@@ -1144,7 +1144,14 @@ class ACM179dACM2019
     :to_ZoneHVACTerminalUnitVariableRefrigerantFlow
   ].freeze
 
-  # Adds equivalent outdoor air to heated-only zones without another OA source.
+  # Why: heated-only zones have no air loop, so the baseline and proposed models
+  # need an explicit, matching outdoor air source for them.
+  # What: adds equivalent ZoneVentilation to every zone that is heated but not
+  # cooled, has no air loop, and has no other OA source.
+  # How: selects zones by thermal_zone_heated?/thermal_zone_cooled? rather than
+  # by equipment type, so baseboard and radiant zones qualify too; skips zones
+  # that already have ZoneVentilation or an OA-delivering zone HVAC unit.
+  # Used by: baseline post-overrides and proposed normalization.
   def add_heated_only_zone_ventilation(model)
     heated_only_zones = model.getThermalZones.select do |zone|
       next false unless zone.airLoopHVACs.empty?
