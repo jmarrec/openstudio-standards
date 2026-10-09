@@ -1025,10 +1025,11 @@ class ACM179dACM2019
   end
 
   # Why: ACM 2019 sets infiltration by exterior wall area at a fixed design rate.
-  # What: removes space-type infiltration and applies space infiltration objects.
-  # How: computes total conditioned exterior wall area, then delegates object
-  # creation to the vanilla PRM space helper.
-  # Used by: create-typical directly and HVAC-control proposed normalization.
+  # What: removes space-type infiltration and applies space infiltration objects
+  # to every space, conditioned or not.
+  # How: sets the flat rate per exterior wall area through
+  # acm_apply_space_infiltration (the vanilla PRM helper skips unconditioned spaces).
+  # Used by: create-typical, the baseline, and HVAC-control proposed normalization.
   def model_apply_standard_infiltration(model, infiltration_rate: nil, prm_standard: Standard.build(PRM_2019_TEMPLATE), rate_cfm_per_ft2: ACM_INFILTRATION_RATE_CFM_PER_FT2)
     unless infiltration_rate.nil?
       OpenStudio.logFree(OpenStudio::Debug, '179d.acm.Model', "Ignoring upstream infiltration_rate #{infiltration_rate}; ACM rate is fixed.")
@@ -1040,24 +1041,18 @@ class ACM179dACM2019
     end
 
     acm_infil_rate_m3_per_s_per_m2 = OpenStudio.convert(rate_cfm_per_ft2, 'cfm/ft^2', 'm^3/s*m^2').get
-    total_exterior_wall_area_m2 = 0.0
-    model.getSpaces.sort_by(&:nameString).each do |space|
-      next if prm_call(prm_standard, :space_conditioning_category, space) == 'Unconditioned'
-
-      total_exterior_wall_area_m2 += space.exteriorWallArea * space.multiplier
-    end
+    total_exterior_wall_area_m2 = model.getSpaces.sum { |space| space.exteriorWallArea * space.multiplier }
     prm_log_dir = prm_standard.instance_variable_get(:@sizing_run_dir) || Dir.pwd
     prm_call(prm_standard, :prm_raise, total_exterior_wall_area_m2.positive?, prm_log_dir, 'Total exterior wall area in the model is 0 m2, Please check model inputs.')
 
-    tot_infil_m3_per_s = acm_infil_rate_m3_per_s_per_m2 * total_exterior_wall_area_m2
     infiltration_coefficients = model_get_infiltration_coefficients(model)
     model.getSpaces.sort_by(&:nameString).each do |space|
-      # The PRM helper removes every space infiltration object, so set sizing-only ones aside and
+      # The rebuild removes every space infiltration object, so set sizing-only ones aside and
       # re-add them only where the rebuilt space-level infiltration is still negligible. Space-type
-      # infiltration is ignored here: the helper reads its schedule, and it is removed below.
+      # infiltration is ignored here: its schedule is read when rebuilding, and it is removed below.
       sizing_only = space.spaceInfiltrationDesignFlowRates.select { |infil| sizing_only_infiltration?(infil) }
       sizing_only.each(&:remove)
-      prm_call(prm_standard, :space_apply_infiltration_rate, space, tot_infil_m3_per_s, 'Flow/ExteriorWallArea', infiltration_coefficients)
+      acm_apply_space_infiltration(space, acm_infil_rate_m3_per_s_per_m2, infiltration_coefficients)
       next if sizing_only.empty?
 
       rebuilt_flow = space.spaceInfiltrationDesignFlowRates.sum { |infil| infil.flowperExteriorWallArea.is_initialized ? infil.flowperExteriorWallArea.get : 0.0 }
@@ -1070,13 +1065,44 @@ class ACM179dACM2019
     true
   end
 
+  # Replaces a space's infiltration with one object at the given flow per
+  # exterior wall area, keeping any schedule from the old space or space-type
+  # object (else always on). Applies to unconditioned spaces too.
+  def acm_apply_space_infiltration(space, flow_per_exterior_wall_area, coefficients)
+    model = space.model
+    schedule = nil
+    [space, (space.spaceType.get if space.spaceType.is_initialized)].compact.each do |owner|
+      old_infiltration = owner.spaceInfiltrationDesignFlowRates.first
+      schedule ||= old_infiltration.schedule.get if old_infiltration && old_infiltration.schedule.is_initialized
+    end
+    if schedule.nil?
+      schedule = model.alwaysOnDiscreteSchedule
+    else
+      schedule.setScheduleTypeLimits(
+        OpenstudioStandards::Schedules.create_schedule_type_limits(model, name: 'Infiltration Schedule Type Limits', lower_limit_value: 0.0, upper_limit_value: 1.0, numeric_type: 'Continuous', unit_type: 'Dimensionless')
+      )
+    end
+
+    space.spaceInfiltrationDesignFlowRates.each(&:remove)
+    infiltration = OpenStudio::Model::SpaceInfiltrationDesignFlowRate.new(model)
+    infiltration.setName("#{space.name} Infiltration")
+    infiltration.setFlowperExteriorWallArea(flow_per_exterior_wall_area.round(13)) if space.exteriorWallArea > 0
+    infiltration.setSchedule(schedule)
+    infiltration.setConstantTermCoefficient(coefficients[0]) unless coefficients[0].nil?
+    infiltration.setTemperatureTermCoefficient(coefficients[1]) unless coefficients[1].nil?
+    infiltration.setVelocityTermCoefficient(coefficients[2]) unless coefficients[2].nil?
+    infiltration.setVelocitySquaredTermCoefficient(coefficients[3]) unless coefficients[3].nil?
+    infiltration.setSpace(space)
+    infiltration
+  end
+
   # Why: ACM exhaust zones should be balanced by transfer air, not extra outdoor
   # infiltration.
   # What: adds ZoneMixing from an adjacent conditioned zone to each ACM exhaust
   # zone and marks exhaust fans as balanced.
   # How: sizes mixing to each fan maximum flow and schedules it with ACM HVAC
   # operation hours.
-  # Used by: create-typical after ACM infiltration is applied.
+  # Used by: create-typical after the exhaust fans are added.
   def apply_acm_exhaust_makeup_zone_mixing(model, building_type: nil)
     fans = model.getFanZoneExhausts
     return if fans.empty?
