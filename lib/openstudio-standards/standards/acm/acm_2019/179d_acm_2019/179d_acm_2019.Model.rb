@@ -1140,7 +1140,8 @@ class ACM179dACM2019
       mixing.setName(mixing_name)
       mixing.setSourceZone(source_zone)
       mixing.setDesignFlowRate(max_flow_m3s)
-      mixing.setSchedule(schedule || fan.availabilitySchedule.get)
+      availability_schedule = fan.availabilitySchedule
+      mixing.setSchedule(schedule || (availability_schedule.is_initialized ? availability_schedule.get : model.alwaysOnDiscreteSchedule))
 
       OpenStudio.logFree(OpenStudio::Info, '179d.acm.Model', "Added makeup ZoneMixing '#{mixing.name}' drawing from '#{source_zone.name}' into '#{zone.name}'.")
     end
