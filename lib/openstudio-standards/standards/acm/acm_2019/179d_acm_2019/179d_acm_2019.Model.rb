@@ -1100,16 +1100,20 @@ class ACM179dACM2019
   # infiltration.
   # What: adds ZoneMixing from an adjacent conditioned zone to each ACM exhaust
   # zone and marks exhaust fans as balanced.
-  # How: sizes mixing to each fan maximum flow and schedules it with ACM HVAC
-  # operation hours.
+  # How: sizes mixing to each fan maximum flow. The schedule is the ACM HVAC
+  # operation schedule when the model has that feature, else the fan availability schedule.
   # Used by: create-typical after the exhaust fans are added.
   def apply_acm_exhaust_makeup_zone_mixing(model, building_type: nil)
     fans = model.getFanZoneExhausts
     return if fans.empty?
 
-    schedule_name = model_get_acm_standards_data(model, throw_if_not_found: true, building_type:)['hvac_operation_schedule']
-    schedule = model_add_schedule(model, schedule_name)
-    return if schedule.nil?
+    feature = model.getBuilding.additionalProperties.getFeatureAsString(ACM_HVAC_OPERATION_SCHEDULE_FEATURE)
+    schedule = nil
+    if feature.is_initialized
+      schedule_name = model_get_acm_standards_data(model, throw_if_not_found: true, building_type:)['hvac_operation_schedule']
+      schedule = model_add_schedule(model, schedule_name)
+      return if schedule.nil?
+    end
 
     fans.each do |fan|
       next unless fan.thermalZone.is_initialized
@@ -1136,7 +1140,7 @@ class ACM179dACM2019
       mixing.setName(mixing_name)
       mixing.setSourceZone(source_zone)
       mixing.setDesignFlowRate(max_flow_m3s)
-      mixing.setSchedule(schedule)
+      mixing.setSchedule(schedule || fan.availabilitySchedule.get)
 
       OpenStudio.logFree(OpenStudio::Info, '179d.acm.Model', "Added makeup ZoneMixing '#{mixing.name}' drawing from '#{source_zone.name}' into '#{zone.name}'.")
     end
