@@ -810,12 +810,10 @@ class ACM179dACM2019
   # How: applies the saved pre-baseline state after PRM has rebuilt HVAC.
   # Used by: the create-179D-baseline measure after vanilla PRM generation.
   def model_apply_179d_prm_baseline_overrides(model, state = {})
-    state_hash = state.is_a?(Hash) ? state : {}
     proposed_total_oa_m3s = state.is_a?(Hash) ? state[:proposed_total_oa_m3s] : state
     add_heated_only_zone_ventilation(model)
     apply_179d_baseline_post_steps(model, proposed_total_oa_m3s)
     apply_non_acm_reheat_max_air_temperature_headroom(model)
-    model_apply_acm_equipment_loads(model, building_type: state_hash[:building_type])
     true
   end
 
