@@ -846,7 +846,10 @@ class ACM179dACM2019
     end
     prm_sizing_schedule_method = prm_standard.method(:model_apply_prm_baseline_sizing_schedule)
     prm_standard.define_singleton_method(:model_apply_prm_baseline_sizing_schedule) do |model|
-      prm_sizing_schedule_method.call(model).tap { acm_standard.restore_design_day_only_infiltration_design_days(model) }
+      prm_sizing_schedule_method.call(model).tap do
+        acm_standard.restore_design_day_only_infiltration_design_days(model)
+        acm_standard.zero_nist_hvac_off_infiltration_design_days(model)
+      end
     end
     prm_standard.define_singleton_method(:__model_get_primary_building_type) do |model|
       acm_standard.__model_get_primary_building_type(model)
@@ -1622,20 +1625,29 @@ class ACM179dACM2019
     schedule
   end
 
-  # Sets both design days of a ruleset to 1.0.
-  def set_ddy_only_design_days(schedule)
+  # Sets both design days of a ruleset to a constant value.
+  def set_ddy_only_design_days(schedule, value = 1.0)
     model = schedule.model
     schedule_name = schedule.nameString
     winter_day = OpenStudio::Model::ScheduleDay.new(model)
     schedule.setWinterDesignDaySchedule(winter_day)
     winter_day.remove
     schedule.winterDesignDaySchedule.setName("#{schedule_name} Winter Design Day")
-    schedule.winterDesignDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 1.0)
+    schedule.winterDesignDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), value)
     summer_day = OpenStudio::Model::ScheduleDay.new(model)
     schedule.setSummerDesignDaySchedule(summer_day)
     summer_day.remove
     schedule.summerDesignDaySchedule.setName("#{schedule_name} Summer Design Day")
-    schedule.summerDesignDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 1.0)
+    schedule.summerDesignDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), value)
+  end
+
+  # PRM design-day sizing sets both NIST On and Off schedules to 1, which counts
+  # infiltration twice. Sizing assumes the HVAC runs, so set the Off design days to 0.
+  def zero_nist_hvac_off_infiltration_design_days(model)
+    model.getSpaceInfiltrationDesignFlowRates.select { |infil| infil.nameString.end_with?(' HVAC Off Infiltration') && infil.schedule.is_initialized }
+         .map { |infil| infil.schedule.get.to_ScheduleRuleset }.select(&:is_initialized).map(&:get)
+         .uniq { |schedule| schedule.handle.to_s }
+         .each { |schedule| set_ddy_only_design_days(schedule, 0.0) }
   end
 
   # PRM design-day sizing resets each infiltration schedule's design days to its
