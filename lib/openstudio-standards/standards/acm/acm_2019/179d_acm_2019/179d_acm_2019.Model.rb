@@ -844,6 +844,25 @@ class ACM179dACM2019
     prm_standard.define_singleton_method(:model_apply_standard_infiltration) do |model, infiltration_rate: nil|
       acm_standard.model_apply_standard_infiltration(model, infiltration_rate:, prm_standard:, rate_cfm_per_ft2: ACM_INFILTRATION_RATE_BASELINE_CFM_PER_FT2)
     end
+    prm_standard.define_singleton_method(:model_update_ground_temperature_profile) do |model, climate_zone|
+      surfaces_with_fc_factor_boundary = model.getSurfaces.any? { |s| s.outsideBoundaryCondition.to_s == 'GroundFCfactorMethod' }
+      if surfaces_with_fc_factor_boundary
+        weather_file_path = prm_get_optional_handler(model.getWeatherFile, @sizing_run_dir, 'path').to_s
+        stat_file_path = weather_file_path.sub('.epw', '.stat').to_s
+        unless File.exist?(stat_file_path)
+          climate_zone_weather_file_map = OpenstudioStandards::Weather.climate_zone_weather_file_map
+          weather_file = climate_zone_weather_file_map[climate_zone]
+          stat_file_path = OpenstudioStandards::Weather.get_standards_weather_file_path(weather_file).sub('.epw', '.stat').to_s
+        end
+        ground_temp = model.getSiteGroundTemperatureFCfactorMethod
+        stat_file = OpenstudioStandards::Weather::StatFile.load(stat_file_path)
+        ground_temperatures = stat_file.monthly_lagged_dry_bulb
+        unless ground_temperatures.empty?
+          ground_temp.setAllMonthlyTemperatures(ground_temperatures)
+        end
+      end
+      surfaces_with_fc_factor_boundary
+    end
     prm_sizing_schedule_method = prm_standard.method(:model_apply_prm_baseline_sizing_schedule)
     prm_standard.define_singleton_method(:model_apply_prm_baseline_sizing_schedule) do |model|
       prm_sizing_schedule_method.call(model).tap { acm_standard.restore_design_day_only_infiltration_design_days(model) }
