@@ -22,6 +22,30 @@ class Prototype179d2007 < ACM179dACM2019
     @prototype_standard_2007 ||= Standard.build('90.1-2007')
   end
 
+  def prototype_space_type_properties(std_2007, space_type)
+    props = std_2007.space_type_get_standards_data(space_type)
+    return props if props && !props.empty?
+
+    additional = space_type.additionalProperties
+    if additional.hasFeature('prototype_standards_space_type')
+      proto_name = additional.getFeatureAsString('prototype_standards_space_type').get
+      bldg_type = space_type.standardsBuildingType.is_initialized ? space_type.standardsBuildingType.get : nil
+      if bldg_type
+        props = std_2007.standards_data['space_types'].find do |r|
+          r['building_type'] == bldg_type && r['space_type'] == proto_name
+        end
+        return props if props && !props.empty?
+      end
+    end
+
+    bldg_type = space_type.standardsBuildingType.is_initialized ? space_type.standardsBuildingType.get : nil
+    if bldg_type
+      st_name = space_type.nameString
+      candidate_rows = std_2007.standards_data['space_types'].select { |r| r['building_type'] == bldg_type }
+      candidate_rows.find { |r| st_name.include?(r['space_type']) }
+    end
+  end
+
   # Applies ASHRAE 90.1-2007 DOE prototype lighting schedules to each space type in the model.
   def model_apply_prototype_lighting_schedule(model)
     std_2007 = prototype_standard_2007
@@ -31,7 +55,7 @@ class Prototype179d2007 < ACM179dACM2019
       lights = space_type.lights
       next if lights.empty?
 
-      props = std_2007.space_type_get_standards_data(space_type)
+      props = prototype_space_type_properties(std_2007, space_type)
       next if props.nil? || props['lighting_schedule'].nil? || props['lighting_schedule'].empty?
 
       schedule_name = props['lighting_schedule']
@@ -71,7 +95,7 @@ class Prototype179d2007 < ACM179dACM2019
       if space.is_initialized
         space_type = space.get.spaceType
         if space_type.is_initialized
-          props = std_2007.space_type_get_standards_data(space_type.get)
+          props = prototype_space_type_properties(std_2007, space_type.get)
           schedule_name = props['service_water_heating_schedule'] if props && props['service_water_heating_schedule'] && !props['service_water_heating_schedule'].empty?
         end
       end

@@ -1513,6 +1513,7 @@ class ACM179dACM2019
       next unless space_type.standardsSpaceType.is_initialized
 
       current = space_type.standardsSpaceType.get
+      space_type.additionalProperties.setFeature('prototype_standards_space_type', current)
       next if valid_lpd.include?(current)
 
       mapped = PROTOTYPE_TO_PRM_LPD_SPACE_TYPE[current]
