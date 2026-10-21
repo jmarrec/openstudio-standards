@@ -49,11 +49,21 @@ class Prototype179d2007 < ACM179dACM2019
 
   # Replaces existing WaterUseEquipment flow rate fraction schedules with ASHRAE 90.1-2007 prototype schedules.
   def model_apply_prototype_service_water_heating(model, building_type: nil)
+    equipments = model.getWaterUseEquipments
+    return false if equipments.empty?
+
     std_2007 = prototype_standard_2007
     count = 0
-    primary_bldg_type = building_type || model_get_primary_building_type(model)
+    primary_bldg_type = building_type
+    if primary_bldg_type.nil?
+      begin
+        primary_bldg_type = model_get_primary_building_type(model)
+      rescue StandardError => e
+        OpenStudio.logFree(OpenStudio::Debug, '179d.prototype.Model', "Could not determine primary building type: #{e.message}")
+      end
+    end
 
-    model.getWaterUseEquipments.sort.each do |equipment|
+    equipments.sort.each do |equipment|
       schedule_name = nil
 
       # 1. Look up from space type if available
