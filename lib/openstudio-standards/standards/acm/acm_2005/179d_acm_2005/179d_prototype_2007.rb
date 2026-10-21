@@ -1,7 +1,7 @@
 require_relative '179d_acm_2019'
 
-# 179D Prototype 2007 sources the SWH schedule/load, the interior lighting usage
-# schedule, and the infiltration rate from ASHRAE 90.1-2007 DOE prototype building values.
+# 179D Prototype 2007 sources the SWH schedule and the interior lighting usage
+# schedule from ASHRAE 90.1-2007 DOE prototype building values.
 class Prototype179d2007 < ACM179dACM2019
   register_standard '179D Prototype 2007'
   register_standard '179D ACM 2005'
@@ -18,18 +18,72 @@ class Prototype179d2007 < ACM179dACM2019
     [ACM_SCHEDULES_FILE, ACM_SPACE_TYPES_FILE]
   end
 
-  def model_apply_prototype_service_water_heating(model, building_type: nil)
-    lookup_type = building_type ? acm_building_type_for_lookup(building_type, throw_if_not_found: false) : nil
-    if building_type && lookup_type.nil?
-      OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', "Skipping prototype SWH override for building type '#{building_type}' because it has no 2007 prototype space type rows.")
-      return false
-    end
-
-    model_apply_acm_service_water_heating(model, building_type:)
+  def prototype_standard_2007
+    @prototype_standard_2007 ||= Standard.build('90.1-2007')
   end
 
+  # Applies ASHRAE 90.1-2007 DOE prototype lighting schedules to each space type in the model.
   def model_apply_prototype_lighting_schedule(model)
-    model_apply_acm_lighting_schedule(model)
+    std_2007 = prototype_standard_2007
+    count = 0
+
+    model.getSpaceTypes.sort.each do |space_type|
+      lights = space_type.lights
+      next if lights.empty?
+
+      props = std_2007.space_type_get_standards_data(space_type)
+      next if props.nil? || props['lighting_schedule'].nil? || props['lighting_schedule'].empty?
+
+      schedule_name = props['lighting_schedule']
+      schedule = std_2007.model_add_schedule(model, schedule_name)
+      next if schedule.nil?
+
+      lights.each do |light|
+        count += 1 if light.setSchedule(schedule)
+      end
+    end
+
+    OpenStudio.logFree(OpenStudio::Info, '179d.prototype.Model', "Applied 2007 prototype lighting schedule to #{count} Lights object(s).")
+    count.positive?
+  end
+
+  # Replaces existing WaterUseEquipment flow rate fraction schedules with ASHRAE 90.1-2007 prototype schedules.
+  def model_apply_prototype_service_water_heating(model, building_type: nil)
+    std_2007 = prototype_standard_2007
+    count = 0
+    primary_bldg_type = building_type || model_get_primary_building_type(model)
+
+    model.getWaterUseEquipments.sort.each do |equipment|
+      schedule_name = nil
+
+      # 1. Look up from space type if available
+      space = equipment.space
+      if space.is_initialized
+        space_type = space.get.spaceType
+        if space_type.is_initialized
+          props = std_2007.space_type_get_standards_data(space_type.get)
+          schedule_name = props['service_water_heating_schedule'] if props && props['service_water_heating_schedule'] && !props['service_water_heating_schedule'].empty?
+        end
+      end
+
+      # 2. Fall back to primary building type SWH schedule
+      if (schedule_name.nil? || schedule_name.empty?) && primary_bldg_type
+        candidate_rows = std_2007.standards_data['space_types'].select do |r|
+          r['building_type'] == primary_bldg_type && r['service_water_heating_schedule'] && !r['service_water_heating_schedule'].empty?
+        end
+        schedule_name = candidate_rows.first['service_water_heating_schedule'] unless candidate_rows.empty?
+      end
+
+      next if schedule_name.nil? || schedule_name.empty?
+
+      schedule = std_2007.model_add_schedule(model, schedule_name)
+      next if schedule.nil?
+
+      count += 1 if equipment.setFlowRateFractionSchedule(schedule)
+    end
+
+    OpenStudio.logFree(OpenStudio::Info, '179d.prototype.Model', "Applied 2007 prototype SWH schedule to #{count} WaterUseEquipment object(s).")
+    count.positive?
   end
 
   # All 2007 prototype schedules are applied directly; there is no 2019
