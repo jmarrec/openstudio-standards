@@ -30,7 +30,10 @@ module OpenstudioStandards
       model.getSpaces.sort.each do |space|
         next unless space.spaceType.is_initialized
 
-        total_space_floor_area_m2 = space.floorArea * space.multiplier
+        # EnergyPlus applies the zone multiplier to water use equipment in the space,
+        # so the peak flow uses the area of one space. Water heater sizing includes the multiplier.
+        total_space_floor_area_m2 = space.floorArea
+        zone_multiplier = space.multiplier
         total_space_floor_area_ft2 = OpenStudio.convert(total_space_floor_area_m2, 'm^2', 'ft^2').get
         space_type = space.spaceType.get
 
@@ -55,7 +58,7 @@ module OpenstudioStandards
         if space.hasAdditionalProperties && space.additionalProperties.hasFeature('num_units')
           num_units = space.additionalProperties.getFeatureAsInteger('num_units').get
         else # assume 1 space is 1 unit
-          num_units = space.multiplier
+          num_units = 1
         end
 
         # loop through and add water use equipment to space
@@ -138,9 +141,9 @@ module OpenstudioStandards
 
         # create water loop for 'One Per Space' and 'One Per Unit' equipment
         unless space_water_use_equipment.empty?
-          water_heater_capacity_w = num_units * OpenStudio.convert(20.0, 'kBtu/hr', 'W').get
-          water_heater_volume_m3 = num_units * OpenStudio.convert(50.0, 'gal', 'm^3').get
-          num_water_heaters = num_units
+          water_heater_capacity_w = num_units * zone_multiplier * OpenStudio.convert(20.0, 'kBtu/hr', 'W').get
+          water_heater_volume_m3 = num_units * zone_multiplier * OpenStudio.convert(50.0, 'gal', 'm^3').get
+          num_water_heaters = num_units * zone_multiplier
 
           # default to electricity for single units
           dedicated_water_heating_fuel = water_heating_fuel || 'Electricity'
