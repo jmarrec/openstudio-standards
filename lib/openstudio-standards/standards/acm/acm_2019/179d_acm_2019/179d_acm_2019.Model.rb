@@ -1333,18 +1333,21 @@ class ACM179dACM2019
   def apply_179d_baseline_post_steps(model, proposed_total_oa_m3s = nil)
     return if proposed_total_oa_m3s.nil?
 
-    baseline_total_oa_m3s = compute_total_design_oa_m3_per_s(model)
-    pct_diff = if baseline_total_oa_m3s.zero?
-                 proposed_total_oa_m3s.zero? ? 0.0 : 100.0
-               else
-                 (proposed_total_oa_m3s - baseline_total_oa_m3s) / baseline_total_oa_m3s * 100.0
-               end
-    return if pct_diff.abs <= 1.0
+    # A zero proposed total means the proposed OA is autosized and not known.
+    # A scale factor of 0 would remove all baseline OA, so skip the step.
+    unless proposed_total_oa_m3s.positive?
+      OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', 'Proposed total OA is 0 m^3/s (autosized, no sizing results); skipping baseline OA scale step.')
+      return
+    end
 
+    baseline_total_oa_m3s = compute_total_design_oa_m3_per_s(model)
     if baseline_total_oa_m3s.zero?
       OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', "Baseline total OA is 0 m^3/s but proposed is #{proposed_total_oa_m3s.round(3)} m^3/s; skipping baseline OA scale step.")
       return
     end
+
+    pct_diff = (proposed_total_oa_m3s - baseline_total_oa_m3s) / baseline_total_oa_m3s * 100.0
+    return if pct_diff.abs <= 1.0
 
     scaling_factor = proposed_total_oa_m3s / baseline_total_oa_m3s
     model.getAirLoopHVACs.sort.each do |air_loop|
