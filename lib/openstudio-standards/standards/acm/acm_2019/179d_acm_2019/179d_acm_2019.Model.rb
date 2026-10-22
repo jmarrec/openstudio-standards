@@ -819,37 +819,59 @@ class ACM179dACM2019
     hoo_sched || model.alwaysOnDiscreteSchedule
   end
 
+  # Returns the HVAC hours of operation schedule for a group of zones: on when
+  # their occupancy is at least HVAC_HOURS_OF_OPERATION_OCC_FRACTION of design.
+  # Zones without people use the building schedule, so their HVAC does not stay off.
+  def zones_hvac_hours_of_operation_schedule(model, zones, name_prefix)
+    sch_name = "#{name_prefix} #{HVAC_HOURS_OF_OPERATION_SCHEDULE_NAME}"
+    existing = model.getScheduleRulesets.find { |s| s.nameString == sch_name }
+    return existing if existing
+    return model_get_or_infer_hours_of_operation_building(model) unless zones.any? { |z| z.numberOfPeople.positive? }
+
+    sch = OpenstudioStandards::ThermalZone.thermal_zones_get_occupancy_schedule(zones, sch_name:, occupied_percentage_threshold: HVAC_HOURS_OF_OPERATION_OCC_FRACTION)
+    sch.is_a?(OpenStudio::Model::Schedule) ? sch : model_get_or_infer_hours_of_operation_building(model)
+  end
+
   # Why: Option B for Decisions 2 & 3 (HVAC and exhaust availability schedules).
-  # What: applies building hours of operation schedule to exhaust fans and appropriate HVAC equipment.
+  # What: applies occupancy-based HVAC hours of operation to exhaust fans and HVAC equipment.
   # How:
-  #   - Exhaust fans (FanZoneExhaust) and their makeup mixings follow building hours of operation.
-  #   - Central air loops follow building hours of operation.
-  #   - Unitary systems supply air fan operating mode follows building hours of operation.
+  #   - Each zone and each air loop gets its own schedule from the occupancy of the zones it serves.
+  #   - Exhaust fans (FanZoneExhaust) and their makeup mixings follow the schedule of their zone.
+  #   - Central air loops and their unitary systems follow the schedule of the air loop.
   #   - Zone HVAC in zones with DOAS are available 24/7 with cycling fan mode.
-  #   - Zone HVAC providing OA directly (no DOAS) follow building hours of operation.
-  #     In residential zones they stay available 24/7; only fan mode and OA follow building hours of operation.
+  #   - Zone HVAC providing OA directly (no DOAS) follow the schedule of their zone.
+  #     In residential zones they stay available 24/7; only fan mode and OA follow the schedule.
   #   - Zone HVAC not providing OA (e.g. UnitHeater, Baseboard) are available 24/7 with cycling fan mode.
   #   - Constant-volume supply fans always run continuously, because EnergyPlus does not let them cycle.
   # Used by: create-typical (proposed) and model_apply_179d_prm_baseline_overrides (baseline).
   def model_apply_179d_hvac_and_exhaust_availability_schedules(model)
-    hoo_sched = model_get_or_infer_hours_of_operation_building(model)
+    zone_sched = {}
+    zone_hoo = ->(zone) { zone_sched[zone.handle.to_s] ||= zones_hvac_hours_of_operation_schedule(model, [zone], zone.nameString) }
 
-    # 1. Exhaust fans follow building operating hours
+    # 1. Exhaust fans follow the schedule of their zone
     model.getFanZoneExhausts.each do |fan|
-      fan.setAvailabilitySchedule(hoo_sched)
-      fan.setFlowFractionSchedule(hoo_sched)
+      sch = fan.thermalZone.is_initialized ? zone_hoo.call(fan.thermalZone.get) : model_get_or_infer_hours_of_operation_building(model)
+      fan.setAvailabilitySchedule(sch)
+      fan.setFlowFractionSchedule(sch)
       mixing = model.getZoneMixings.find { |zm| zm.nameString == "#{fan.nameString} Makeup mixing" }
-      mixing.setSchedule(hoo_sched) if mixing
+      mixing.setSchedule(sch) if mixing
     end
 
-    # 2. Central air loops follow building operating hours
+    # 2. Central air loops follow the schedule of the zones they serve
+    loop_sched = {}
     model.getAirLoopHVACs.each do |air_loop|
-      air_loop.setAvailabilitySchedule(hoo_sched)
+      loop_sched[air_loop.handle.to_s] = zones_hvac_hours_of_operation_schedule(model, air_loop.thermalZones, air_loop.nameString)
+      air_loop.setAvailabilitySchedule(loop_sched[air_loop.handle.to_s])
     end
 
-    # 3. Unitary systems supply air fan operating mode follows building operating hours (continuous when occupied, cycle when unoccupied)
+    # 3. Unitary systems: continuous fan when occupied, cycling fan when unoccupied
     model.getAirLoopHVACUnitarySystems.each do |unitary|
-      set_supply_air_fan_operating_mode_schedule(unitary, hoo_sched)
+      sch = if unitary.airLoopHVAC.is_initialized
+              loop_sched[unitary.airLoopHVAC.get.handle.to_s]
+            elsif unitary.controllingZoneorThermostatLocation.is_initialized
+              zone_hoo.call(unitary.controllingZoneorThermostatLocation.get)
+            end
+      set_supply_air_fan_operating_mode_schedule(unitary, sch || model_get_or_infer_hours_of_operation_building(model))
     end
 
     # 4. Zone HVAC equipment
@@ -875,6 +897,7 @@ class ACM179dACM2019
           end
 
           if is_oa_providing
+            hoo_sched = zone_hoo.call(zone)
             set_zone_hvac_availability_schedule(eq, zone_residential ? model.alwaysOnDiscreteSchedule : hoo_sched)
             set_supply_air_fan_operating_mode_schedule(eq, hoo_sched)
             set_zone_hvac_outdoor_air_schedule(eq, hoo_sched)
