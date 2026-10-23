@@ -13,6 +13,41 @@ class TestCreateTypicalServiceWaterHeating < Minitest::Test
     FileUtils.mkdir_p "#{__dir__}/output"
   end
 
+  # Returns a model with two equal apartment floors; the second zone has mid_multiplier.
+  def apartment_model_with_zone_multiplier(mid_multiplier)
+    model = OpenStudio::Model::Model.new
+    space_type = OpenStudio::Model::SpaceType.new(model)
+    space_type.setStandardsBuildingType('HighriseApartment')
+    space_type.setStandardsSpaceType('Apartment')
+    [1, mid_multiplier].each_with_index do |multiplier, i|
+      floor = OpenStudio::Point3dVector.new
+      [[0, 0], [0, 10], [10, 10], [10, 0]].each { |x, y| floor << OpenStudio::Point3d.new(x, y, 3.0 * i) }
+      space = OpenStudio::Model::Space.fromFloorPrint(floor, 3.0, model).get
+      space.setSpaceType(space_type)
+      zone = OpenStudio::Model::ThermalZone.new(model)
+      zone.setMultiplier(multiplier)
+      space.setThermalZone(zone)
+    end
+    model
+  end
+
+  def test_create_typical_service_water_heating_zone_multiplier
+    model = apartment_model_with_zone_multiplier(5)
+    @swh.create_typical_service_water_heating(model, water_heating_fuel: 'NaturalGas')
+
+    # EnergyPlus applies the zone multiplier, so the peak flow is per space
+    peak_flows = model.getWaterUseEquipments.map { |e| e.waterUseEquipmentDefinition.peakFlowRate }
+    assert_equal(2, peak_flows.size)
+    assert_in_delta(peak_flows[0], peak_flows[1], 1e-12)
+
+    # The water heater serves all six floors (1 + 5), three times the two-floor model
+    reference = apartment_model_with_zone_multiplier(1)
+    @swh.create_typical_service_water_heating(reference, water_heating_fuel: 'NaturalGas')
+    capacity = model.getWaterHeaterMixeds.first.heaterMaximumCapacity.get
+    reference_capacity = reference.getWaterHeaterMixeds.first.heaterMaximumCapacity.get
+    assert_in_delta(3.0, capacity / reference_capacity, 1e-6)
+  end
+
   def test_create_typical_service_water_heating_restaurant
     # set output directory
     output_dir = "#{__dir__}/output/#{__method__}"
