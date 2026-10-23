@@ -843,14 +843,20 @@ class ACM179dACM2019
     return existing if existing && OpenstudioStandards::Schedules.schedule_get_hourly_values(existing) == on_hours
 
     existing&.setName("#{sch_name} Superseded")
+    # Group days by day of week, because one rule applies to every matching day of week in its date range.
+    year = model.getYearDescription.assumedYear
     days_by_profile = Hash.new { |h, k| h[k] = [] }
-    on_hours.each_slice(24).with_index { |profile, i| days_by_profile[profile] << (i + 1) }
-    default_profile = days_by_profile.max_by { |_profile, days| days.size }.first
+    on_hours.each_slice(24).with_index do |profile, i|
+      days_by_profile[[OpenStudio::Date.fromDayOfYear(i + 1, year).dayOfWeek.valueName, profile]] << (i + 1)
+    end
+    default_profile = days_by_profile.group_by { |(_day, profile), _days| profile }.max_by { |_profile, groups| groups.sum { |_key, days| days.size } }.first
 
     sch = OpenStudio::Model::ScheduleRuleset.new(model)
     sch.setName(sch_name)
     OpenstudioStandards::Schedules.schedule_day_populate_from_array_of_values(sch.defaultDaySchedule, default_profile)
-    days_by_profile.except(default_profile).each do |profile, days|
+    days_by_profile.each do |(_day, profile), days|
+      next if profile == default_profile
+
       OpenstudioStandards::Schedules.schedule_ruleset_create_rules_from_day_list(sch, days).each do |rule|
         OpenstudioStandards::Schedules.schedule_day_populate_from_array_of_values(rule.daySchedule, profile)
       end
@@ -918,10 +924,10 @@ class ACM179dACM2019
       mixing.setSchedule(sch) if mixing
     end
 
-    # 2. Central air loops are on when any zone they serve is on
+    # 2. Central air loops are on when any zone they serve with people is on
     loop_sched = {}
     model.getAirLoopHVACs.each do |air_loop|
-      zone_schedules = air_loop.thermalZones.map { |zone| zone_hoo.call(zone) }
+      zone_schedules = air_loop.thermalZones.select { |zone| zone.numberOfPeople.positive? }.map { |zone| zone_hoo.call(zone) }
       sch_name = "#{air_loop.nameString} #{HVAC_HOURS_OF_OPERATION_SCHEDULE_NAME}"
       loop_sched[air_loop.handle.to_s] = zone_schedules.empty? ? model_get_or_infer_hours_of_operation_building(model) : union_hvac_hours_of_operation_schedule(model, zone_schedules, sch_name)
       air_loop.setAvailabilitySchedule(loop_sched[air_loop.handle.to_s])
