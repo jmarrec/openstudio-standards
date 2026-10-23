@@ -832,18 +832,79 @@ class ACM179dACM2019
     sch.is_a?(OpenStudio::Model::Schedule) ? sch : model_get_or_infer_hours_of_operation_building(model)
   end
 
-  # Why: Option B for Decisions 2 & 3 (HVAC and exhaust availability schedules).
-  # What: applies occupancy-based HVAC hours of operation to exhaust fans and HVAC equipment.
-  # How:
-  #   - Each zone and each air loop gets its own schedule from the occupancy of the zones it serves.
-  #   - Exhaust fans (FanZoneExhaust) and their makeup mixings follow the schedule of their zone.
-  #   - Central air loops and their unitary systems follow the schedule of the air loop.
-  #   - Zone HVAC in zones with DOAS are available 24/7 with cycling fan mode.
-  #   - Zone HVAC providing OA directly (no DOAS) follow the schedule of their zone.
-  #     In residential zones they stay available 24/7; only fan mode and OA follow the schedule.
-  #   - Zone HVAC not providing OA (e.g. UnitHeater, Baseboard) are available 24/7 with cycling fan mode.
-  #   - Constant-volume supply fans always run continuously, because EnergyPlus does not let them cycle.
-  # Used by: create-typical (proposed) and model_apply_179d_prm_baseline_overrides (baseline).
+  # Returns a schedule that is on in each hour that any of the given schedules is on.
+  # A schedule with the same name is reused only if it has the same hours.
+  def union_hvac_hours_of_operation_schedule(model, schedules, sch_name)
+    schedules = schedules.uniq
+    return schedules.first if schedules.size == 1
+
+    on_hours = schedules.map { |s| OpenstudioStandards::Schedules.schedule_get_hourly_values(s) }.transpose.map { |vals| vals.any?(&:positive?) ? 1.0 : 0.0 }
+    existing = model.getScheduleRulesets.find { |s| s.nameString == sch_name }
+    return existing if existing && OpenstudioStandards::Schedules.schedule_get_hourly_values(existing) == on_hours
+
+    existing&.setName("#{sch_name} Superseded")
+    days_by_profile = Hash.new { |h, k| h[k] = [] }
+    on_hours.each_slice(24).with_index { |profile, i| days_by_profile[profile] << (i + 1) }
+    default_profile = days_by_profile.max_by { |_profile, days| days.size }.first
+
+    sch = OpenStudio::Model::ScheduleRuleset.new(model)
+    sch.setName(sch_name)
+    OpenstudioStandards::Schedules.schedule_day_populate_from_array_of_values(sch.defaultDaySchedule, default_profile)
+    days_by_profile.except(default_profile).each do |profile, days|
+      OpenstudioStandards::Schedules.schedule_ruleset_create_rules_from_day_list(sch, days).each do |rule|
+        OpenstudioStandards::Schedules.schedule_day_populate_from_array_of_values(rule.daySchedule, profile)
+      end
+    end
+    # On for design days, the same as the occupancy-based zone schedules.
+    design_day = OpenStudio::Model::ScheduleDay.new(model, 1.0)
+    sch.setSummerDesignDaySchedule(design_day)
+    sch.setWinterDesignDaySchedule(design_day)
+    design_day.remove
+    sch
+  end
+
+  # Replaces the Fan:ConstantVolume supply fan of each zone unit that has a fan
+  # operating mode schedule with a Fan:OnOff fan of the same size and power.
+  # EnergyPlus does not let a constant-volume fan cycle, so the baseline fan could not
+  # cycle to meet loads during unoccupied hours.
+  def replace_zone_hvac_constant_volume_fans_with_on_off(model)
+    count = 0
+    model.getZoneHVACComponents.each do |raw_eq|
+      eq = cast_zone_hvac_equipment(raw_eq)
+      next unless eq.respond_to?(:setSupplyAirFanOperatingModeSchedule) && eq.respond_to?(:setSupplyAirFan)
+      next unless supply_fan_constant_volume?(eq)
+
+      old_fan = eq.supplyAirFan.to_FanConstantVolume.get
+      new_fan = OpenStudio::Model::FanOnOff.new(model, old_fan.availabilitySchedule)
+      new_fan.setFanTotalEfficiency(old_fan.fanTotalEfficiency)
+      new_fan.setPressureRise(old_fan.pressureRise)
+      new_fan.setMotorEfficiency(old_fan.motorEfficiency)
+      new_fan.setMotorInAirstreamFraction(old_fan.motorInAirstreamFraction)
+      new_fan.setEndUseSubcategory(old_fan.endUseSubcategory)
+      old_fan.maximumFlowRate.is_initialized ? new_fan.setMaximumFlowRate(old_fan.maximumFlowRate.get) : new_fan.autosizeMaximumFlowRate
+      fan_name = old_fan.nameString
+      eq.setSupplyAirFan(new_fan)
+      old_fan.remove
+      new_fan.setName(fan_name)
+      count += 1
+    end
+    OpenStudio.logFree(OpenStudio::Info, '179d.acm.Model', "Replaced #{count} zone HVAC constant-volume supply fans with Fan:OnOff.") if count.positive?
+    count
+  end
+
+  # Prepares the baseline zone HVAC before the first PRM sizing run: on/off fans
+  # for zone units, then the HVAC and exhaust availability schedules.
+  def apply_179d_baseline_hvac_before_sizing(model)
+    replace_zone_hvac_constant_volume_fans_with_on_off(model)
+    model_apply_179d_hvac_and_exhaust_availability_schedules(model)
+  end
+
+  # Sets HVAC and exhaust availability from zone occupancy (on at 5% of design people).
+  # - Exhaust fans and their make-up mixing follow their zone.
+  # - Air loops are on when any served zone is on. Night cycling holds the setback.
+  # - Zone units are always available, so the thermostat holds the setback. Units
+  #   that supply OA directly (no DOAS) run the fan continuously when the zone is on.
+  # - A constant-volume supply fan always runs continuously, because EnergyPlus requires it.
   def model_apply_179d_hvac_and_exhaust_availability_schedules(model)
     zone_sched = {}
     zone_hoo = ->(zone) { zone_sched[zone.handle.to_s] ||= zones_hvac_hours_of_operation_schedule(model, [zone], zone.nameString) }
@@ -857,10 +918,12 @@ class ACM179dACM2019
       mixing.setSchedule(sch) if mixing
     end
 
-    # 2. Central air loops follow the schedule of the zones they serve
+    # 2. Central air loops are on when any zone they serve is on
     loop_sched = {}
     model.getAirLoopHVACs.each do |air_loop|
-      loop_sched[air_loop.handle.to_s] = zones_hvac_hours_of_operation_schedule(model, air_loop.thermalZones, air_loop.nameString)
+      zone_schedules = air_loop.thermalZones.map { |zone| zone_hoo.call(zone) }
+      sch_name = "#{air_loop.nameString} #{HVAC_HOURS_OF_OPERATION_SCHEDULE_NAME}"
+      loop_sched[air_loop.handle.to_s] = zone_schedules.empty? ? model_get_or_infer_hours_of_operation_building(model) : union_hvac_hours_of_operation_schedule(model, zone_schedules, sch_name)
       air_loop.setAvailabilitySchedule(loop_sched[air_loop.handle.to_s])
     end
 
@@ -879,32 +942,24 @@ class ACM179dACM2019
       zone_has_doas = zone.airLoopHVACs.any? do |al|
         al.nameString =~ /doas/i || al.sizingSystem.typeofLoadtoSizeOn.to_s == 'VentilationRequirement'
       end
-      zone_residential = OpenstudioStandards::ThermalZone.thermal_zone_residential?(zone)
-
       zone.equipment.each do |raw_eq|
         next if raw_eq.to_FanZoneExhaust.is_initialized
         next if raw_eq.iddObjectType.valueDescription =~ /AirTerminal/i
 
         eq = cast_zone_hvac_equipment(raw_eq)
+        set_zone_hvac_availability_schedule(eq, model.alwaysOnDiscreteSchedule)
 
-        if zone_has_doas
-          set_zone_hvac_availability_schedule(eq, model.alwaysOnDiscreteSchedule)
-          set_supply_air_fan_operating_mode_schedule(eq, model.alwaysOffDiscreteSchedule)
+        is_oa_providing = OA_PROVIDING_ZONE_HVAC_METHODS.any? { |meth| raw_eq.respond_to?(meth) && raw_eq.send(meth).is_initialized }
+        if !is_oa_providing && raw_eq.respond_to?(:to_AirLoopHVACUnitarySystem) && raw_eq.to_AirLoopHVACUnitarySystem.is_initialized
+          is_oa_providing = raw_eq.to_AirLoopHVACUnitarySystem.get.airLoopHVACOutdoorAirSystem.is_initialized
+        end
+
+        if is_oa_providing && !zone_has_doas
+          hoo_sched = zone_hoo.call(zone)
+          set_supply_air_fan_operating_mode_schedule(eq, hoo_sched)
+          set_zone_hvac_outdoor_air_schedule(eq, hoo_sched)
         else
-          is_oa_providing = OA_PROVIDING_ZONE_HVAC_METHODS.any? { |meth| raw_eq.respond_to?(meth) && raw_eq.send(meth).is_initialized }
-          if !is_oa_providing && raw_eq.respond_to?(:to_AirLoopHVACUnitarySystem) && raw_eq.to_AirLoopHVACUnitarySystem.is_initialized
-            is_oa_providing = raw_eq.to_AirLoopHVACUnitarySystem.get.airLoopHVACOutdoorAirSystem.is_initialized
-          end
-
-          if is_oa_providing
-            hoo_sched = zone_hoo.call(zone)
-            set_zone_hvac_availability_schedule(eq, zone_residential ? model.alwaysOnDiscreteSchedule : hoo_sched)
-            set_supply_air_fan_operating_mode_schedule(eq, hoo_sched)
-            set_zone_hvac_outdoor_air_schedule(eq, hoo_sched)
-          else
-            set_zone_hvac_availability_schedule(eq, model.alwaysOnDiscreteSchedule)
-            set_supply_air_fan_operating_mode_schedule(eq, model.alwaysOffDiscreteSchedule)
-          end
+          set_supply_air_fan_operating_mode_schedule(eq, model.alwaysOffDiscreteSchedule)
         end
       end
     end
@@ -1069,6 +1124,12 @@ class ACM179dACM2019
     prm_sizing_schedule_method = prm_standard.method(:model_apply_prm_baseline_sizing_schedule)
     prm_standard.define_singleton_method(:model_apply_prm_baseline_sizing_schedule) do |model|
       prm_sizing_schedule_method.call(model).tap { acm_standard.restore_design_day_only_infiltration_design_days(model) }
+    end
+    # Only the baseline build names its first sizing run SR1; the proposed runs are PROP-SR1 and PROP-SR2.
+    prm_sizing_run_method = prm_standard.method(:model_run_sizing_run)
+    prm_standard.define_singleton_method(:model_run_sizing_run) do |model, sizing_run_dir = "#{Dir.pwd}/SR"|
+      acm_standard.apply_179d_baseline_hvac_before_sizing(model) if File.basename(sizing_run_dir.to_s) == 'SR1'
+      prm_sizing_run_method.call(model, sizing_run_dir)
     end
     prm_standard.define_singleton_method(:__model_get_primary_building_type) do |model|
       acm_standard.__model_get_primary_building_type(model)
@@ -1360,13 +1421,6 @@ class ACM179dACM2019
       mixing.setName(mixing_name)
       mixing.setSourceZone(source_zone)
       mixing.setDesignFlowRate(max_flow_m3s)
-      if schedule.nil? && (!fan.availabilitySchedule.is_initialized || fan.availabilitySchedule.get == model.alwaysOnDiscreteSchedule)
-        hoo_sched ||= model_get_or_infer_hours_of_operation_building(model)
-        if hoo_sched
-          fan.setAvailabilitySchedule(hoo_sched)
-          fan.setFlowFractionSchedule(hoo_sched)
-        end
-      end
       availability_schedule = fan.availabilitySchedule
       mixing.setSchedule(schedule || (availability_schedule.is_initialized ? availability_schedule.get : model.alwaysOnDiscreteSchedule))
 
@@ -1737,10 +1791,8 @@ class ACM179dACM2019
     end
   end
 
-  # Why: PRM calls this during baseline lighting schedule adjustment.
-  # What: keeps the 179D deterministic schedule-copy behavior on vanilla PRM.
-  # How: sorts spaces by name and caches by the final suffixed schedule name.
-  # Used by: prepared PRM standards during baseline generation.
+  # Removes the occupancy-sensor credit from each baseline lighting schedule.
+  # Processes shared Lights once so the name suffix does not repeat.
   def space_type_light_sch_change(model, prm_standard: Standard.build(PRM_2019_TEMPLATE))
     sizing_run_dir = prm_standard.instance_variable_get(:@sizing_run_dir)
     schedule_hash = {}
