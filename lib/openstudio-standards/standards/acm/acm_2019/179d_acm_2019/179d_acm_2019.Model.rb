@@ -245,8 +245,11 @@ class ACM179dACM2019
   ACM_EXHAUST_SPACE_TYPES_PRM_2019 = ['Kitchen', 'Restroom', 'Cafeteria'].freeze
   ACM_INFILTRATION_RATE_CFM_PER_FT2 = 0.0448
   SIZING_ONLY_INFILTRATION_FEATURE = '179d_sizing_only_infiltration'.freeze
-  # Baseline path uses the ACM 2005 design-condition infiltration rate (flat).
-  ACM_INFILTRATION_RATE_BASELINE_CFM_PER_FT2 = 0.038
+  # NIST infiltration inputs: airtightness at 75 Pa for each pass, 6-sided area, air barrier.
+  NIST_INFILTRATION_PROPOSED_CFM_PER_FT2 = 0.6
+  NIST_INFILTRATION_BASELINE_CFM_PER_FT2 = 1.0
+  NIST_INFILTRATION_AREA_COVERED = '6-sided'.freeze
+  NIST_INFILTRATION_AIR_BARRIER = true
   NON_ACM_REHEAT_MAX_AIR_TEMPERATURE_C = 43.3
   REHEAT_HIGH_OCC_MIN_DENSITY_PPL_PER_M2 = 0.269
   REHEAT_HIGH_OCC_MIN_PEOPLE = 50.0
@@ -903,6 +906,7 @@ class ACM179dACM2019
   def apply_179d_baseline_hvac_before_sizing(model)
     replace_zone_hvac_constant_volume_fans_with_on_off(model)
     model_apply_179d_hvac_and_exhaust_availability_schedules(model)
+    sync_nist_infiltration_schedules(model)
   end
 
   # Sets HVAC and exhaust availability from zone occupancy (on at 5% of design people).
@@ -1078,11 +1082,12 @@ class ACM179dACM2019
     apply_179d_baseline_post_steps(model, proposed_total_oa_m3s)
     apply_non_acm_reheat_max_air_temperature_headroom(model)
     model_apply_179d_hvac_and_exhaust_availability_schedules(model)
+    sync_nist_infiltration_schedules(model)
     true
   end
 
   # Why: the ACM overlay should own 179D decisions without replacing the PRM rule engine.
-  # What: installs ACM infiltration, building-type, lighting, and fan-power hooks.
+  # What: installs NIST infiltration, building-type, lighting, and fan-power hooks.
   # How: uses singleton methods so the pinned PRM class stays untouched.
   # Used by: the baseline and HVAC-control measures on PRM-2019 paths.
   def prepare_prm_standard_for_acm_overrides(prm_standard)
@@ -1102,11 +1107,8 @@ class ACM179dACM2019
     prm_standard.define_singleton_method(:space_type_light_sch_change) do |model|
       acm_standard.space_type_light_sch_change(model, prm_standard:)
     end
-    prm_standard.define_singleton_method(:model_get_infiltration_coefficients) do |model|
-      acm_standard.model_get_infiltration_coefficients(model)
-    end
-    prm_standard.define_singleton_method(:model_apply_standard_infiltration) do |model, infiltration_rate: nil|
-      acm_standard.model_apply_standard_infiltration(model, infiltration_rate:, prm_standard:, rate_cfm_per_ft2: ACM_INFILTRATION_RATE_BASELINE_CFM_PER_FT2)
+    prm_standard.define_singleton_method(:model_apply_standard_infiltration) do |model, **_options|
+      acm_standard.model_apply_nist_infiltration(model, NIST_INFILTRATION_BASELINE_CFM_PER_FT2)
     end
     prm_standard.define_singleton_method(:model_update_ground_temperature_profile) do |model, climate_zone|
       surfaces_with_fc_factor_boundary = model.getSurfaces.any? { |s| s.outsideBoundaryCondition.to_s == 'GroundFCfactorMethod' }
@@ -1129,7 +1131,10 @@ class ACM179dACM2019
     end
     prm_sizing_schedule_method = prm_standard.method(:model_apply_prm_baseline_sizing_schedule)
     prm_standard.define_singleton_method(:model_apply_prm_baseline_sizing_schedule) do |model|
-      prm_sizing_schedule_method.call(model).tap { acm_standard.restore_design_day_only_infiltration_design_days(model) }
+      prm_sizing_schedule_method.call(model).tap do
+        acm_standard.restore_design_day_only_infiltration_design_days(model)
+        acm_standard.zero_nist_hvac_off_infiltration_design_days(model)
+      end
     end
     # Only the baseline build names its first sizing run SR1; the proposed runs are PROP-SR1 and PROP-SR2.
     prm_sizing_run_method = prm_standard.method(:model_run_sizing_run)
@@ -1225,8 +1230,8 @@ class ACM179dACM2019
   # What: normalizes retained proposed HVAC without rebuilding it or applying
   # standard equipment efficiency.
   # How: calls vanilla PRM methods through prm_standard, with ACM hooks around
-  # infiltration, DCV, exhaust makeup, and reheat fixes. Heated-only ventilation
-  # is added earlier by create_typical_building_from_model_comstock.
+  # DCV, exhaust makeup, and reheat fixes. Infiltration and heated-only
+  # ventilation are added earlier by create_typical_building_from_model_comstock.
   # Used by: the HVAC-control measure for PRM-2019 proposed normalization.
   def model_create_179d_proposed_normalization(model, climate_zone, hvac_building_type = 'other nonresidential', sizing_run_dir = Dir.pwd, _debug: false, prm_standard: Standard.build(PRM_2019_TEMPLATE))
     prm_standard = prepare_prm_standard_for_acm_overrides(prm_standard)
@@ -1252,8 +1257,6 @@ class ACM179dACM2019
                          'PROP-DCV-PREPASS sizing run failed; DCV requirements will be evaluated without sizing SQL.')
     end
     prm_call(prm_standard, :model_evaluate_dcv_requirements, model)
-
-    model_apply_standard_infiltration(model, prm_standard:)
 
     model.getThermalZones.each { |zone| prm_call(prm_standard, :thermal_zone_apply_prm_baseline_supply_temperatures, zone) }
     apply_acm_exhaust_higher_reheat_design_sat(model)
@@ -1302,11 +1305,31 @@ class ACM179dACM2019
     true
   end
 
-  # Why: both proposed and baseline need the same wind-driven infiltration
-  # coefficients for 179D ACM comparisons.
-  # What: returns the PRM manual coefficient set.
-  # How: keeps the coefficient lookup deterministic and independent of model data.
-  # Used by: ACM infiltration on create-typical, baseline, and HVAC-control paths.
+  # Returns the NIST airtightness value in m^3/h-m^2 for a rate in cfm/ft^2.
+  def nist_airtightness_value(rate_cfm_per_ft2)
+    OpenStudio.convert(rate_cfm_per_ft2, 'cfm/ft^2', 'm^3/s*m^2').get * 3600.0
+  end
+
+  # Replaces all infiltration with NIST correlations at the given rate at 75 Pa.
+  # Re-adds sizing-only infiltration to spaces that get no NIST infiltration.
+  # Leaves the model unchanged and returns false if NIST has no data for the model.
+  def model_apply_nist_infiltration(model, rate_cfm_per_ft2)
+    sizing_only_spaces = model.getSpaceInfiltrationDesignFlowRates.select { |infil| sizing_only_infiltration?(infil) && infil.space.is_initialized }
+                              .map { |infil| infil.space.get }.uniq { |space| space.handle.to_s }
+    applied = OpenstudioStandards::Infiltration.model_set_nist_infiltration(model,
+                                                                            airtightness_value: nist_airtightness_value(rate_cfm_per_ft2),
+                                                                            airtightness_area_covered: NIST_INFILTRATION_AREA_COVERED,
+                                                                            air_barrier: NIST_INFILTRATION_AIR_BARRIER)
+    unless applied
+      OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', 'NIST infiltration was not applied. The model keeps its existing infiltration.')
+      return false
+    end
+
+    sizing_only_spaces.each { |space| add_design_day_only_infiltration(space) if space.spaceInfiltrationDesignFlowRates.empty? }
+    true
+  end
+
+  # Returns the PRM wind-driven coefficient set used by the opt-in ACM infiltration.
   def model_get_infiltration_coefficients(_model)
     [0.0, 0.0, 0.224, 0.0]
   end
@@ -1316,7 +1339,7 @@ class ACM179dACM2019
   # to every space, conditioned or not.
   # How: sets the flat rate per exterior wall area through
   # acm_apply_space_infiltration (the vanilla PRM helper skips unconditioned spaces).
-  # Used by: create-typical, the baseline, and HVAC-control proposed normalization.
+  # Used by: create-typical when an ACM standard is passed in.
   def model_apply_standard_infiltration(model, infiltration_rate: nil, prm_standard: Standard.build(PRM_2019_TEMPLATE), rate_cfm_per_ft2: ACM_INFILTRATION_RATE_CFM_PER_FT2)
     unless infiltration_rate.nil?
       OpenStudio.logFree(OpenStudio::Debug, '179d.acm.Model', "Ignoring upstream infiltration_rate #{infiltration_rate}; ACM rate is fixed.")
@@ -1603,18 +1626,21 @@ class ACM179dACM2019
   def apply_179d_baseline_post_steps(model, proposed_total_oa_m3s = nil)
     return if proposed_total_oa_m3s.nil?
 
-    baseline_total_oa_m3s = compute_total_design_oa_m3_per_s(model)
-    pct_diff = if baseline_total_oa_m3s.zero?
-                 proposed_total_oa_m3s.zero? ? 0.0 : 100.0
-               else
-                 (proposed_total_oa_m3s - baseline_total_oa_m3s) / baseline_total_oa_m3s * 100.0
-               end
-    return if pct_diff.abs <= 1.0
+    # A zero proposed total means the proposed OA is autosized and not known.
+    # A scale factor of 0 would remove all baseline OA, so skip the step.
+    unless proposed_total_oa_m3s.positive?
+      OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', 'Proposed total OA is 0 m^3/s (autosized, no sizing results); skipping baseline OA scale step.')
+      return
+    end
 
+    baseline_total_oa_m3s = compute_total_design_oa_m3_per_s(model)
     if baseline_total_oa_m3s.zero?
       OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', "Baseline total OA is 0 m^3/s but proposed is #{proposed_total_oa_m3s.round(3)} m^3/s; skipping baseline OA scale step.")
       return
     end
+
+    pct_diff = (proposed_total_oa_m3s - baseline_total_oa_m3s) / baseline_total_oa_m3s * 100.0
+    return if pct_diff.abs <= 1.0
 
     scaling_factor = proposed_total_oa_m3s / baseline_total_oa_m3s
     model.getAirLoopHVACs.sort.each do |air_loop|
@@ -1933,20 +1959,45 @@ class ACM179dACM2019
     schedule
   end
 
-  # Sets both design days of a ruleset to 1.0.
-  def set_ddy_only_design_days(schedule)
+  # Sets both design days of a ruleset to a constant value.
+  def set_ddy_only_design_days(schedule, value = 1.0)
     model = schedule.model
     schedule_name = schedule.nameString
     winter_day = OpenStudio::Model::ScheduleDay.new(model)
     schedule.setWinterDesignDaySchedule(winter_day)
     winter_day.remove
     schedule.winterDesignDaySchedule.setName("#{schedule_name} Winter Design Day")
-    schedule.winterDesignDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 1.0)
+    schedule.winterDesignDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), value)
     summer_day = OpenStudio::Model::ScheduleDay.new(model)
     schedule.setSummerDesignDaySchedule(summer_day)
     summer_day.remove
     schedule.summerDesignDaySchedule.setName("#{schedule_name} Summer Design Day")
-    schedule.summerDesignDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 1.0)
+    schedule.summerDesignDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), value)
+  end
+
+  # PRM design-day sizing sets both NIST On and Off schedules to 1, which counts
+  # infiltration twice. Sizing assumes the HVAC runs, so set the Off design days to 0.
+  def zero_nist_hvac_off_infiltration_design_days(model)
+    model.getSpaceInfiltrationDesignFlowRates.select { |infil| infil.nameString.end_with?(' HVAC Off Infiltration') && infil.schedule.is_initialized }
+         .map { |infil| infil.schedule.get.to_ScheduleRuleset }.select(&:is_initialized).map(&:get)
+         .uniq { |schedule| schedule.handle.to_s }
+         .each { |schedule| set_ddy_only_design_days(schedule, 0.0) }
+  end
+
+  # Rebuilds the NIST On and Off schedules from the current HVAC schedule.
+  # NIST copies the HVAC schedule only once, so a later HVAC schedule change needs this.
+  # Sizing assumes the HVAC runs, so the On design days are 1 and the Off design days are 0.
+  def sync_nist_infiltration_schedules(model)
+    on_suffix = ' HVAC On Infiltration'
+    return false unless model.getSpaceInfiltrationDesignFlowRates.any? { |infil| infil.nameString.end_with?(on_suffix) }
+
+    OpenstudioStandards::Infiltration.model_set_nist_infiltration_schedules(model)
+    model.getSpaceInfiltrationDesignFlowRates.select { |infil| infil.nameString.end_with?(on_suffix) && infil.schedule.is_initialized }
+         .map { |infil| infil.schedule.get.to_ScheduleRuleset }.select(&:is_initialized).map(&:get)
+         .uniq { |schedule| schedule.handle.to_s }
+         .each { |schedule| set_ddy_only_design_days(schedule, 1.0) }
+    zero_nist_hvac_off_infiltration_design_days(model)
+    true
   end
 
   # PRM design-day sizing resets each infiltration schedule's design days to its
