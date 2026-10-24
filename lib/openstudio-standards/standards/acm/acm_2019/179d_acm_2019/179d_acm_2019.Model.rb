@@ -906,6 +906,7 @@ class ACM179dACM2019
   def apply_179d_baseline_hvac_before_sizing(model)
     replace_zone_hvac_constant_volume_fans_with_on_off(model)
     model_apply_179d_hvac_and_exhaust_availability_schedules(model)
+    sync_nist_infiltration_schedules(model)
   end
 
   # Sets HVAC and exhaust availability from zone occupancy (on at 5% of design people).
@@ -1081,6 +1082,7 @@ class ACM179dACM2019
     apply_179d_baseline_post_steps(model, proposed_total_oa_m3s)
     apply_non_acm_reheat_max_air_temperature_headroom(model)
     model_apply_179d_hvac_and_exhaust_availability_schedules(model)
+    sync_nist_infiltration_schedules(model)
     true
   end
 
@@ -1980,6 +1982,22 @@ class ACM179dACM2019
          .map { |infil| infil.schedule.get.to_ScheduleRuleset }.select(&:is_initialized).map(&:get)
          .uniq { |schedule| schedule.handle.to_s }
          .each { |schedule| set_ddy_only_design_days(schedule, 0.0) }
+  end
+
+  # Rebuilds the NIST On and Off schedules from the current HVAC schedule.
+  # NIST copies the HVAC schedule only once, so a later HVAC schedule change needs this.
+  # Sizing assumes the HVAC runs, so the On design days are 1 and the Off design days are 0.
+  def sync_nist_infiltration_schedules(model)
+    on_suffix = ' HVAC On Infiltration'
+    return false unless model.getSpaceInfiltrationDesignFlowRates.any? { |infil| infil.nameString.end_with?(on_suffix) }
+
+    OpenstudioStandards::Infiltration.model_set_nist_infiltration_schedules(model)
+    model.getSpaceInfiltrationDesignFlowRates.select { |infil| infil.nameString.end_with?(on_suffix) && infil.schedule.is_initialized }
+         .map { |infil| infil.schedule.get.to_ScheduleRuleset }.select(&:is_initialized).map(&:get)
+         .uniq { |schedule| schedule.handle.to_s }
+         .each { |schedule| set_ddy_only_design_days(schedule, 1.0) }
+    zero_nist_hvac_off_infiltration_design_days(model)
+    true
   end
 
   # PRM design-day sizing resets each infiltration schedule's design days to its
