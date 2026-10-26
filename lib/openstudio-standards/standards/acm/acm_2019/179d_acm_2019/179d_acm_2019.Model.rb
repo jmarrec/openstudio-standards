@@ -906,7 +906,6 @@ class ACM179dACM2019
   def apply_179d_baseline_hvac_before_sizing(model)
     replace_zone_hvac_constant_volume_fans_with_on_off(model)
     model_apply_179d_hvac_and_exhaust_availability_schedules(model)
-    sync_nist_infiltration_schedules(model)
   end
 
   # Sets HVAC and exhaust availability from zone occupancy (on at 5% of design people).
@@ -915,6 +914,7 @@ class ACM179dACM2019
   # - Zone units are always available, so the thermostat holds the setback. Units
   #   that supply OA directly (no DOAS) run the fan continuously when the zone is on.
   # - A constant-volume supply fan always runs continuously, because EnergyPlus requires it.
+  # - NIST infiltration schedules follow the new HVAC schedule.
   def model_apply_179d_hvac_and_exhaust_availability_schedules(model)
     zone_sched = {}
     zone_hoo = ->(zone) { zone_sched[zone.handle.to_s] ||= zones_hvac_hours_of_operation_schedule(model, [zone], zone.nameString) }
@@ -974,6 +974,7 @@ class ACM179dACM2019
       end
     end
 
+    sync_nist_infiltration_schedules(model)
     true
   end
 
@@ -1082,7 +1083,6 @@ class ACM179dACM2019
     apply_179d_baseline_post_steps(model, proposed_total_oa_m3s)
     apply_non_acm_reheat_max_air_temperature_headroom(model)
     model_apply_179d_hvac_and_exhaust_availability_schedules(model)
-    sync_nist_infiltration_schedules(model)
     true
   end
 
