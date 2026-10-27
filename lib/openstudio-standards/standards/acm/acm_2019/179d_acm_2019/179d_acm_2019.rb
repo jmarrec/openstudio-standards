@@ -9,6 +9,8 @@ class ACM179d2019 < CROP2019
   ACM_SCHEDULES_FILE = '179d_acm_2019.schedules.json'.freeze
   ACM_SPACE_TYPES_FILE = '179d_acm_2019.spc_typ.json'.freeze
   ACM_EXTEND_TABLES = ['schedules'].freeze
+  # Building feature that marks a model where the ACM HVAC operation schedule was applied.
+  ACM_HVAC_OPERATION_SCHEDULE_FEATURE = 'acm_hvac_operation_schedule'.freeze
 
   def initialize
     super()

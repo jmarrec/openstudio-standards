@@ -32,7 +32,7 @@ class CROP2019
       end
 
       unless repaired_zones.empty?
-        OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model',
+        OpenStudio.logFree(OpenStudio::Warn, 'crop.Model',
                            "Added missing PRM fan-power metadata for #{repaired_zones.size} zone(s) on #{object_name}.")
       end
 
@@ -62,7 +62,7 @@ class CROP2019
 
       add_winter_solar_design_day(model, location, selected_day)
     rescue StandardError => e
-      OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model',
+      OpenStudio.logFree(OpenStudio::Warn, 'crop.Model',
                          "Could not add winter solar cooling design day: #{e.message}")
     end
 
@@ -202,7 +202,7 @@ class CROP2019
       design_day.setBeamSolarDaySchedule(epw_day_schedule(model, 'Beam Solar', records) { |record| record[:direct_normal_w_per_m2] })
       design_day.setDiffuseSolarDaySchedule(epw_day_schedule(model, 'Diffuse Solar', records) { |record| record[:diffuse_horizontal_w_per_m2] })
 
-      OpenStudio.logFree(OpenStudio::Info, '179d.acm.Model',
+      OpenStudio.logFree(OpenStudio::Info, 'crop.Model',
                          "Added #{WINTER_SOLAR_DESIGN_DAY_NAME} for #{records.first[:month]}/#{records.first[:day]}.")
     end
 
@@ -231,18 +231,17 @@ class CROP2019
 
   HOT_CLIMATE_ZONES = ['0A', '0B', '1A', '1B', '2A', '2B', '3A'].freeze
 
-  ACM_HVAC_OPERATION_SCHEDULE_FEATURE = 'acm_hvac_operation_schedule'.freeze
   PRM_2019_TEMPLATE = '90.1-PRM-2019'.freeze
 
-  ACM_EXHAUST_HIGH_REHEAT_DESIGN_SAT_C = 50.0
-  ACM_EXHAUST_SPACE_TYPES_PRM_2019 = ['Kitchen', 'Restroom', 'Cafeteria'].freeze
+  EXHAUST_ZONE_HIGH_REHEAT_DESIGN_SAT_C = 50.0
+  EXHAUST_ZONE_SPACE_TYPES_PRM_2019 = ['Kitchen', 'Restroom', 'Cafeteria'].freeze
   SIZING_ONLY_INFILTRATION_FEATURE = '179d_sizing_only_infiltration'.freeze
   # NIST infiltration inputs: airtightness at 75 Pa for each pass, 6-sided area, air barrier.
   NIST_INFILTRATION_PROPOSED_CFM_PER_FT2 = 0.6
   NIST_INFILTRATION_BASELINE_CFM_PER_FT2 = 1.0
   NIST_INFILTRATION_AREA_COVERED = '6-sided'.freeze
   NIST_INFILTRATION_AIR_BARRIER = true
-  NON_ACM_REHEAT_MAX_AIR_TEMPERATURE_C = 43.3
+  NON_EXHAUST_ZONE_REHEAT_MAX_AIR_TEMPERATURE_C = 43.3
   REHEAT_HIGH_OCC_MIN_DENSITY_PPL_PER_M2 = 0.269
   REHEAT_HIGH_OCC_MIN_PEOPLE = 50.0
 
@@ -386,7 +385,7 @@ class CROP2019
       inferred.setName(HVAC_HOURS_OF_OPERATION_SCHEDULE_NAME)
       hoo_sched = inferred
     rescue StandardError => e
-      OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', "Could not infer HVAC hours of operation schedule: #{e.message}. Using Always On.")
+      OpenStudio.logFree(OpenStudio::Warn, 'crop.Model', "Could not infer HVAC hours of operation schedule: #{e.message}. Using Always On.")
     ensure
       previous_hoo.each do |set, sch|
         sch.is_initialized ? set.setHoursofOperationSchedule(sch.get) : set.resetHoursofOperationSchedule
@@ -475,7 +474,7 @@ class CROP2019
       new_fan.setName(fan_name)
       count += 1
     end
-    OpenStudio.logFree(OpenStudio::Info, '179d.acm.Model', "Replaced #{count} zone HVAC constant-volume supply fans with Fan:OnOff.") if count.positive?
+    OpenStudio.logFree(OpenStudio::Info, 'crop.Model', "Replaced #{count} zone HVAC constant-volume supply fans with Fan:OnOff.") if count.positive?
     count
   end
 
@@ -578,7 +577,7 @@ class CROP2019
     proposed_total_oa_m3s = state.is_a?(Hash) ? state[:proposed_total_oa_m3s] : state
     add_heated_only_zone_ventilation(model)
     apply_179d_baseline_post_steps(model, proposed_total_oa_m3s)
-    apply_non_acm_reheat_max_air_temperature_headroom(model)
+    apply_non_exhaust_zone_reheat_max_air_temperature_headroom(model)
     model_apply_179d_hvac_and_exhaust_availability_schedules(model)
     true
   end
@@ -597,7 +596,7 @@ class CROP2019
       prm_standard.send(:user_model_air_loop_hvac_demand_control_ventilation_required?, air_loop_hvac)
     end
     prm_standard.define_singleton_method(:get_airloop_hvac_design_oa_from_sql) do |air_loop_hvac|
-      host_standard.acm_airloop_design_oa_with_sizing_fallback(air_loop_hvac, prm_get_airloop_design_oa)
+      host_standard.airloop_design_oa_with_sizing_fallback(air_loop_hvac, prm_get_airloop_design_oa)
     end
     prm_standard.define_singleton_method(:space_type_light_sch_change) do |model|
       host_standard.space_type_light_sch_change(model, prm_standard:)
@@ -710,7 +709,7 @@ class CROP2019
   # autosized; a hard-set design OA (proposed normalization) leaves it 0 and the
   # DCV air-loop gate wrongly drops DCV. Fall back to the Sizing:System (or OA
   # controller) design OA when the 62.1 read is non-positive.
-  def acm_airloop_design_oa_with_sizing_fallback(air_loop_hvac, prm_get_airloop_design_oa)
+  def airloop_design_oa_with_sizing_fallback(air_loop_hvac, prm_get_airloop_design_oa)
     oa_m3_per_s = prm_get_airloop_design_oa.call(air_loop_hvac)
     return oa_m3_per_s if oa_m3_per_s.is_a?(Numeric) && oa_m3_per_s > 0.0
 
@@ -731,7 +730,7 @@ class CROP2019
   # baseline-grade neutral HVAC controls.
   # What: normalizes retained proposed HVAC without rebuilding it or applying
   # standard equipment efficiency.
-  # How: calls vanilla PRM methods through prm_standard, with ACM hooks around
+  # How: calls vanilla PRM methods through prm_standard, with 179D hooks around
   # DCV, exhaust makeup, and reheat fixes. Infiltration and heated-only
   # ventilation are added earlier by create_typical_building_from_model_comstock.
   # Used by: the HVAC-control measure for PRM-2019 proposed normalization.
@@ -755,13 +754,13 @@ class CROP2019
     end
 
     unless model.sqlFile.is_initialized || prm_call(prm_standard, :model_run_sizing_run, model, "#{sizing_run_dir}/PROP-DCV-PREPASS")
-      OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model',
+      OpenStudio.logFree(OpenStudio::Warn, 'crop.Model',
                          'PROP-DCV-PREPASS sizing run failed; DCV requirements will be evaluated without sizing SQL.')
     end
     prm_call(prm_standard, :model_evaluate_dcv_requirements, model)
 
     model.getThermalZones.each { |zone| prm_call(prm_standard, :thermal_zone_apply_prm_baseline_supply_temperatures, zone) }
-    apply_acm_exhaust_higher_reheat_design_sat(model)
+    apply_exhaust_zone_higher_reheat_design_sat(model)
     model.getAirLoopHVACs.each { |air_loop| prm_call(prm_standard, :air_loop_hvac_apply_prm_sizing_temperatures, air_loop) }
     prm_call(prm_standard, :model_apply_prm_baseline_sizing_schedule, model)
     prm_call(prm_standard, :model_apply_prm_sizing_parameters, model).tap { WinterSolarDesignDay.model_add_hot_climate_winter_solar_design_day(model, climate_zone) }
@@ -775,7 +774,7 @@ class CROP2019
     return false unless prm_call(prm_standard, :model_run_sizing_run, model, "#{sizing_run_dir}/PROP-SR1")
 
     model.getAirLoopHVACs.sort.each { |air_loop| prm_call(prm_standard, :air_loop_hvac_apply_minimum_vav_damper_positions, air_loop, false) }
-    apply_acm_exhaust_fixed_minimum_airflow(model)
+    apply_exhaust_zone_fixed_minimum_airflow(model)
     prm_call(prm_standard, :model_apply_multizone_vav_outdoor_air_sizing, model)
 
     model.getAirLoopHVACs.sort.each { |air_loop| prm_call(prm_standard, :air_loop_hvac_apply_prm_baseline_fan_power, air_loop) }
@@ -800,9 +799,9 @@ class CROP2019
     prm_call(prm_standard, :model_remove_unused_resource_objects, model)
     prm_call(prm_standard, :model_add_reporting_tolerances, model)
     apply_heated_only_storage_economizer_override(model, hvac_building_type)
-    apply_acm_exhaust_reheat_coil_capacity_floor(model)
-    apply_non_acm_reheat_max_air_temperature_headroom(model)
-    apply_non_acm_reheat_max_flow_during_reheat(model)
+    apply_exhaust_zone_reheat_coil_capacity_floor(model)
+    apply_non_exhaust_zone_reheat_max_air_temperature_headroom(model)
+    apply_non_exhaust_zone_reheat_max_flow_during_reheat(model)
 
     true
   end
@@ -823,7 +822,7 @@ class CROP2019
                                                                             airtightness_area_covered: NIST_INFILTRATION_AREA_COVERED,
                                                                             air_barrier: NIST_INFILTRATION_AIR_BARRIER)
     unless applied
-      OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', 'NIST infiltration was not applied. The model keeps its existing infiltration.')
+      OpenStudio.logFree(OpenStudio::Warn, 'crop.Model', 'NIST infiltration was not applied. The model keeps its existing infiltration.')
       return false
     end
 
@@ -835,14 +834,14 @@ class CROP2019
   # The ACM overlay overrides this method.
   def exhaust_makeup_mixing_schedule(_model, building_type: nil); end
 
-  # Why: ACM exhaust zones should be balanced by transfer air, not extra outdoor
+  # Why: exhaust zones should be balanced by transfer air, not extra outdoor
   # infiltration.
-  # What: adds ZoneMixing from an adjacent conditioned zone to each ACM exhaust
+  # What: adds ZoneMixing from an adjacent conditioned zone to each exhaust
   # zone and marks exhaust fans as balanced.
   # How: sizes mixing to each fan maximum flow. The schedule comes from
   # exhaust_makeup_mixing_schedule, else it is the fan availability schedule.
   # Used by: create-typical after the exhaust fans are added.
-  def apply_acm_exhaust_makeup_zone_mixing(model, building_type: nil)
+  def apply_exhaust_zone_makeup_mixing(model, building_type: nil)
     fans = model.getFanZoneExhausts
     return if fans.empty?
 
@@ -855,12 +854,12 @@ class CROP2019
       zone = fan.thermalZone.get
       next unless zone.spaces.any? do |space|
         space_type = space.spaceType
-        space_type.is_initialized && ACM_EXHAUST_SPACE_TYPES_PRM_2019.include?(space_type.get.standardsSpaceType.to_s)
+        space_type.is_initialized && EXHAUST_ZONE_SPACE_TYPES_PRM_2019.include?(space_type.get.standardsSpaceType.to_s)
       end
 
-      source_zone = acm_exhaust_makeup_source_zone(zone)
+      source_zone = exhaust_zone_makeup_source_zone(zone)
       if source_zone.nil?
-        OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', "No adjacent conditioned zone found to supply makeup air for exhaust zone '#{zone.name}'.")
+        OpenStudio.logFree(OpenStudio::Warn, 'crop.Model', "No adjacent conditioned zone found to supply makeup air for exhaust zone '#{zone.name}'.")
         next
       end
 
@@ -876,15 +875,15 @@ class CROP2019
       availability_schedule = fan.availabilitySchedule
       mixing.setSchedule(schedule || (availability_schedule.is_initialized ? availability_schedule.get : model.alwaysOnDiscreteSchedule))
 
-      OpenStudio.logFree(OpenStudio::Info, '179d.acm.Model', "Added makeup ZoneMixing '#{mixing.name}' drawing from '#{source_zone.name}' into '#{zone.name}'.")
+      OpenStudio.logFree(OpenStudio::Info, 'crop.Model', "Added makeup ZoneMixing '#{mixing.name}' drawing from '#{source_zone.name}' into '#{zone.name}'.")
     end
   end
 
   # Why: exhaust makeup transfer air needs a plausible conditioned source zone.
   # What: selects the largest conditioned neighboring zone.
   # How: walks matched interior surfaces and filters neighbors with thermostats.
-  # Used by: apply_acm_exhaust_makeup_zone_mixing.
-  def acm_exhaust_makeup_source_zone(zone)
+  # Used by: apply_exhaust_zone_makeup_mixing.
+  def exhaust_zone_makeup_source_zone(zone)
     neighbors = {}
     zone.spaces.each do |space|
       space.surfaces.each do |surface|
@@ -939,7 +938,7 @@ class CROP2019
       updated += 1
     end
 
-    OpenStudio.logFree(OpenStudio::Info, '179d.acm.Model', "Applied 62.1-2019 ventilation rates to #{updated} Warehouse space type(s).")
+    OpenStudio.logFree(OpenStudio::Info, 'crop.Model', "Applied 62.1-2019 ventilation rates to #{updated} Warehouse space type(s).")
     updated.positive?
   end
 
@@ -961,7 +960,7 @@ class CROP2019
     end
     return if heated_only_zones.empty?
 
-    OpenStudio.logFree(OpenStudio::Info, '179d.acm.Model', "Adding ZoneVentilationDesignFlowRate to #{heated_only_zones.size} heated-only zone(s).")
+    OpenStudio.logFree(OpenStudio::Info, 'crop.Model', "Adding ZoneVentilationDesignFlowRate to #{heated_only_zones.size} heated-only zone(s).")
     model_add_equivalent_zone_ventilation_for_heated_only_zones_with_dsoa(model, heated_only_zones, ventilation_type: 'Exhaust')
   end
 
@@ -1052,13 +1051,13 @@ class CROP2019
     # A zero proposed total means the proposed OA is autosized and not known.
     # A scale factor of 0 would remove all baseline OA, so skip the step.
     unless proposed_total_oa_m3s.positive?
-      OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', 'Proposed total OA is 0 m^3/s (autosized, no sizing results); skipping baseline OA scale step.')
+      OpenStudio.logFree(OpenStudio::Warn, 'crop.Model', 'Proposed total OA is 0 m^3/s (autosized, no sizing results); skipping baseline OA scale step.')
       return
     end
 
     baseline_total_oa_m3s = compute_total_design_oa_m3_per_s(model)
     if baseline_total_oa_m3s.zero?
-      OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', "Baseline total OA is 0 m^3/s but proposed is #{proposed_total_oa_m3s.round(3)} m^3/s; skipping baseline OA scale step.")
+      OpenStudio.logFree(OpenStudio::Warn, 'crop.Model', "Baseline total OA is 0 m^3/s but proposed is #{proposed_total_oa_m3s.round(3)} m^3/s; skipping baseline OA scale step.")
       return
     end
 
@@ -1103,45 +1102,45 @@ class CROP2019
     total
   end
 
-  # Why: ACM exhaust VAV zones need enough reheat temperature for pinned minimum
+  # Why: exhaust-zone VAV terminals need enough reheat temperature for pinned minimum
   # airflow.
-  # What: raises zone heating design SAT for ACM exhaust VAV:Reheat zones.
+  # What: raises zone heating design SAT for exhaust VAV:Reheat zones.
   # How: sets the sizing-zone heating design supply temperature before PRM sizing.
   # Used by: proposed normalization before sizing runs.
-  def apply_acm_exhaust_higher_reheat_design_sat(model)
+  def apply_exhaust_zone_higher_reheat_design_sat(model)
     model.getThermalZones.each do |zone|
-      next unless acm_exhaust_zone?(zone)
+      next unless exhaust_zone?(zone)
 
       air_terminal = zone.airLoopHVACTerminal
       next unless air_terminal.is_initialized && air_terminal.get.to_AirTerminalSingleDuctVAVReheat.is_initialized
 
-      zone.sizingZone.setZoneHeatingDesignSupplyAirTemperature(ACM_EXHAUST_HIGH_REHEAT_DESIGN_SAT_C)
+      zone.sizingZone.setZoneHeatingDesignSupplyAirTemperature(EXHAUST_ZONE_HIGH_REHEAT_DESIGN_SAT_C)
     end
   end
 
-  # Raises exterior non-ACM VAV:Reheat terminal caps after PRM sizing without lowering existing caps.
-  def apply_non_acm_reheat_max_air_temperature_headroom(model)
+  # Raises exterior non-exhaust VAV:Reheat terminal caps after PRM sizing without lowering existing caps.
+  def apply_non_exhaust_zone_reheat_max_air_temperature_headroom(model)
     model.getThermalZones.each do |zone|
-      next if acm_exhaust_zone?(zone)
+      next if exhaust_zone?(zone)
       next unless zone.spaces.any? { |space| space.exteriorWallArea > 0.0 }
 
       air_terminal = zone.airLoopHVACTerminal
       next unless air_terminal.is_initialized && air_terminal.get.to_AirTerminalSingleDuctVAVReheat.is_initialized
 
       vav_terminal = air_terminal.get.to_AirTerminalSingleDuctVAVReheat.get
-      next if vav_terminal.maximumReheatAirTemperature >= NON_ACM_REHEAT_MAX_AIR_TEMPERATURE_C
+      next if vav_terminal.maximumReheatAirTemperature >= NON_EXHAUST_ZONE_REHEAT_MAX_AIR_TEMPERATURE_C
 
-      vav_terminal.setMaximumReheatAirTemperature(NON_ACM_REHEAT_MAX_AIR_TEMPERATURE_C)
+      vav_terminal.setMaximumReheatAirTemperature(NON_EXHAUST_ZONE_REHEAT_MAX_AIR_TEMPERATURE_C)
     end
   end
 
   # Why: PRM minimum-damper logic can undo exhaust-matched VAV minimum airflow.
-  # What: pins ACM exhaust VAV minimum flow to the zone exhaust design flow.
-  # How: sets FixedFlowRate on VAV:Reheat terminals serving ACM exhaust zones.
+  # What: pins exhaust-zone VAV minimum flow to the zone exhaust design flow.
+  # How: sets FixedFlowRate on VAV:Reheat terminals serving exhaust zones.
   # Used by: proposed normalization after PRM minimum-damper adjustment.
-  def apply_acm_exhaust_fixed_minimum_airflow(model)
+  def apply_exhaust_zone_fixed_minimum_airflow(model)
     model.getThermalZones.each do |zone|
-      next unless acm_exhaust_zone?(zone)
+      next unless exhaust_zone?(zone)
 
       air_terminal = zone.airLoopHVACTerminal
       next unless air_terminal.is_initialized && air_terminal.get.to_AirTerminalSingleDuctVAVReheat.is_initialized
@@ -1155,19 +1154,19 @@ class CROP2019
     end
   end
 
-  # Why: autosized reheat coils can be too small for ACM exhaust minimum supply.
-  # What: floors hot-water reheat coil capacity for ACM exhaust VAV terminals.
+  # Why: autosized reheat coils can be too small for the exhaust-zone minimum supply.
+  # What: floors hot-water reheat coil capacity for exhaust-zone VAV terminals.
   # How: computes a capacity floor from exhaust flow, air heat capacity, and SAT
   # lift, then raises capacity and water flow only when needed.
   # Used by: proposed normalization after sizing runs.
-  def apply_acm_exhaust_reheat_coil_capacity_floor(model)
+  def apply_exhaust_zone_reheat_coil_capacity_floor(model)
     rho_air = 1.2
     cp_air = 1005.0
     cooling_sat_c = 12.8889
     sizing_factor = 1.25
 
     model.getThermalZones.each do |zone|
-      next unless acm_exhaust_zone?(zone)
+      next unless exhaust_zone?(zone)
 
       air_terminal = zone.airLoopHVACTerminal
       next unless air_terminal.is_initialized && air_terminal.get.to_AirTerminalSingleDuctVAVReheat.is_initialized
@@ -1180,7 +1179,7 @@ class CROP2019
       next unless heating_coil.is_initialized
 
       coil = heating_coil.get
-      target_capacity_w = exhaust_m3s * rho_air * cp_air * (ACM_EXHAUST_HIGH_REHEAT_DESIGN_SAT_C - cooling_sat_c) * sizing_factor
+      target_capacity_w = exhaust_m3s * rho_air * cp_air * (EXHAUST_ZONE_HIGH_REHEAT_DESIGN_SAT_C - cooling_sat_c) * sizing_factor
       current_capacity_w = if coil.ratedCapacity.is_initialized
                              coil.ratedCapacity.get
                            elsif coil.autosizedRatedCapacity.is_initialized
@@ -1200,14 +1199,14 @@ class CROP2019
     end
   end
 
-  # Why: high-occupancy non-ACM zones may need full damper opening during reheat
+  # Why: high-occupancy non-exhaust zones may need full damper opening during reheat
   # recovery.
   # What: sets MaximumFlowFractionDuringReheat to 1.0 on qualifying terminals.
-  # How: filters to non-ACM VAV:Reheat hot-water terminals with high people load.
+  # How: filters to non-exhaust VAV:Reheat hot-water terminals with high people load.
   # Used by: proposed normalization near final cleanup.
-  def apply_non_acm_reheat_max_flow_during_reheat(model)
+  def apply_non_exhaust_zone_reheat_max_flow_during_reheat(model)
     model.getThermalZones.each do |zone|
-      next if acm_exhaust_zone?(zone)
+      next if exhaust_zone?(zone)
 
       air_terminal = zone.airLoopHVACTerminal
       next unless air_terminal.is_initialized && air_terminal.get.to_AirTerminalSingleDuctVAVReheat.is_initialized
@@ -1239,7 +1238,7 @@ class CROP2019
 
       mapped = PROTOTYPE_TO_PRM_LPD_SPACE_TYPE[current]
       if mapped.nil?
-        OpenStudio.logFree(OpenStudio::Warn, '179d.acm.Model', "No PRM lpd_space_type mapping for '#{current}'; baseline lighting may be zero.")
+        OpenStudio.logFree(OpenStudio::Warn, 'crop.Model', "No PRM lpd_space_type mapping for '#{current}'; baseline lighting may be zero.")
         next
       end
       space_type.setStandardsSpaceType(mapped)
@@ -1297,7 +1296,7 @@ class CROP2019
     system_type = select_baseline_system_type(hvac_building_type, model, climate_zone)
     model.getAirLoopHVACs.each { |air_loop| air_loop.additionalProperties.setFeature('baseline_system_type', system_type) }
     model.getThermalZones.each { |zone| zone.additionalProperties.setFeature('baseline_system_type', system_type) }
-    OpenStudio.logFree(OpenStudio::Info, '179d.acm.Model', "Tagged retained HVAC with inferred baseline_system_type='#{system_type}'.")
+    OpenStudio.logFree(OpenStudio::Info, 'crop.Model', "Tagged retained HVAC with inferred baseline_system_type='#{system_type}'.")
   end
 
   # Why: proposed normalization keeps real HVAC but still needs PRM baseline type
@@ -1478,10 +1477,11 @@ class CROP2019
     outdoor_air.outdoorAirMethod.casecmp('sum').zero? ? values.sum : values.max
   end
 
-  def acm_exhaust_zone?(zone)
+  # True when a space of the zone has an exhaust space type (kitchen, restroom, cafeteria).
+  def exhaust_zone?(zone)
     zone.spaces.any? do |space|
       space_type = space.spaceType
-      space_type.is_initialized && ACM_EXHAUST_SPACE_TYPES_PRM_2019.include?(space_type.get.standardsSpaceType.to_s)
+      space_type.is_initialized && EXHAUST_ZONE_SPACE_TYPES_PRM_2019.include?(space_type.get.standardsSpaceType.to_s)
     end
   end
 
@@ -1505,7 +1505,7 @@ class CROP2019
     building_level_type = nil
     if building.standardsBuildingType.is_initialized
       building_level_type = model_get_lookup_name(building.standardsBuildingType.get)
-      OpenStudio.logFree(OpenStudio::Debug, '179d.acm.Model', "found Building level standardsBuildingType = '#{building_level_type}'")
+      OpenStudio.logFree(OpenStudio::Debug, 'crop.Model', "found Building level standardsBuildingType = '#{building_level_type}'")
     end
 
     model.getSpaceTypes.sort.each do |space_type|
@@ -1519,7 +1519,7 @@ class CROP2019
     if building_types.empty?
       if building_level_type.nil?
         msg = "Cannot identify a single building type in model, none of your #{model.getSpaceTypes.size} SpaceTypes have a standardsBuildingType assigned and neither does the Building"
-        OpenStudio.logFree(OpenStudio::Error, '179d.acm.Model', msg)
+        OpenStudio.logFree(OpenStudio::Error, 'crop.Model', msg)
         raise 'No Primary Building Type found'
       end
       return building_level_type
