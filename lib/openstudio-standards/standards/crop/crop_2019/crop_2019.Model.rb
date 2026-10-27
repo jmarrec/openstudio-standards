@@ -664,6 +664,12 @@ class CROP2019
       host_standard.ensure_prm_fan_power_features(air_loop_hvac, prm_standard)
       prm_fan_power_method.call(air_loop_hvac)
     end
+    prm_chiller_pump_ems_method = prm_standard.method(:add_ems_for_multiple_chiller_pumps_w_secondary_plant)
+    prm_standard.define_singleton_method(:add_ems_for_multiple_chiller_pumps_w_secondary_plant) do |model, primary_plant|
+      prm_chiller_pump_ems_method.call(model, primary_plant).tap do
+        host_standard.stage_chiller_pumps_on_secondary_demand(model, primary_plant)
+      end
+    end
 
     prm_standard
   end
@@ -1399,6 +1405,28 @@ class CROP2019
          .map { |infil| infil.schedule.get.to_ScheduleRuleset }.select(&:is_initialized).map(&:get)
          .uniq { |schedule| schedule.handle.to_s }
          .each { |schedule| set_ddy_only_design_days(schedule, 0.0) }
+  end
+
+  # PRM stages the primary chiller pumps on the primary loop's own supply-side demand.
+  # The forced pump flow keeps that demand high, so the plant can lock on with no load.
+  # Sense the secondary loop (the building load) instead. Returns true if the sensor changed.
+  def stage_chiller_pumps_on_secondary_demand(model, primary_plant)
+    sensor_name = "#{primary_plant.name.to_s.gsub(/[-\s]+/, '_')}_CHW_DEMAND"
+    sensor = model.getEnergyManagementSystemSensors.find { |s| s.nameString == sensor_name }
+    return false if sensor.nil?
+
+    secondary_plant = primary_plant.demandComponents.filter_map { |c| c.to_HeatExchangerFluidToFluid.get if c.to_HeatExchangerFluidToFluid.is_initialized }
+                                   .flat_map { |hx| [hx.plantLoop, hx.secondaryPlantLoop] }
+                                   .filter_map { |loop| loop.get if loop.is_initialized }
+                                   .find { |loop| loop.handle != primary_plant.handle }
+    if secondary_plant.nil?
+      OpenStudio.logFree(OpenStudio::Warn, 'openstudio.standards.PlantLoop', "For #{primary_plant.name}, no secondary loop found; chiller pump EMS still senses the primary loop.")
+      return false
+    end
+
+    sensor.setKeyName(secondary_plant.nameString)
+    OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.PlantLoop', "For #{primary_plant.name}, chiller pump EMS now senses demand on #{secondary_plant.name}.")
+    true
   end
 
   # Rebuilds the NIST On and Off schedules from the current HVAC schedule.
