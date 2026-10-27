@@ -1,6 +1,8 @@
-class ACM179dACM2019 < Standard
+require_relative '179d_2019'
+
+# ACM 2019 overlay: loads the ACM data and applies it only when a workflow asks for it.
+class ACM179d2019 < Standard179d2019
   register_standard '179D ACM 2019'
-  attr_reader :template
 
   ACM_TEMPLATE = '179d-ACM-2019'.freeze
   ACM_SCHEDULES_FILE = '179d_acm_2019.schedules.json'.freeze
@@ -65,3 +67,6 @@ class ACM179dACM2019 < Standard
     raise msg
   end
 end
+
+# Old name of the ACM overlay class. Kept so old load guards, tests and scripts still work.
+ACM179dACM2019 = ACM179d2019

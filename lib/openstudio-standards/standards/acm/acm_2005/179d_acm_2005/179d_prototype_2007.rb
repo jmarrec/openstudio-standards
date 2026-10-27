@@ -2,7 +2,7 @@ require_relative '179d_acm_2019'
 
 # 179D Prototype 2007 sources the SWH schedule and the interior lighting usage
 # schedule from ASHRAE 90.1-2007 DOE prototype building values.
-class Prototype179d2007 < ACM179dACM2019
+class Prototype179d2007 < ACM179d2019
   register_standard '179D Prototype 2007'
   register_standard '179D ACM 2005'
 

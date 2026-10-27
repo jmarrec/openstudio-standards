@@ -1,4 +1,6 @@
-class ACM179dACM2019
+require_relative '179d_acm_2019'
+
+class ACM179d2019
   ACM_OFFICE_SPACE_TYPES_NAMES_MAP = {
     'SmallOffice' => 'WholeBuilding - Sm Office',
     'MediumOffice' => 'WholeBuilding - Md Office',
