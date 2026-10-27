@@ -1,4 +1,4 @@
-# 179D override for typical service water heating (SWH).
+# CROP override for typical service water heating (SWH).
 # openstudio-standards 0.8.2 puts the zone multiplier in the typical SWH peak flow,
 # and EnergyPlus applies the zone multiplier again. This wrapper calls the upstream
 # method, then removes the zone multiplier from the peak flows. The water heaters
@@ -7,20 +7,20 @@
 module OpenstudioStandards
   module ServiceWaterHeating
     class << self
-      unless method_defined?(:create_typical_service_water_heating_without_179d_fix)
-        alias_method :create_typical_service_water_heating_without_179d_fix, :create_typical_service_water_heating
+      unless method_defined?(:create_typical_service_water_heating_without_crop_fix)
+        alias_method :create_typical_service_water_heating_without_crop_fix, :create_typical_service_water_heating
       end
 
       def create_typical_service_water_heating(model, **kwargs)
-        swh_loops = create_typical_service_water_heating_without_179d_fix(model, **kwargs)
-        remove_zone_multiplier_from_typical_swh_flows_179d(model)
+        swh_loops = create_typical_service_water_heating_without_crop_fix(model, **kwargs)
+        remove_zone_multiplier_from_typical_swh_flows_crop(model)
         swh_loops
       end
 
       # Divides a peak flow by its zone multiplier only if it equals the typical
       # per-space flow times the multiplier. Fixed flows that upstream does not
       # multiply, and flows that are already per space, do not change.
-      def remove_zone_multiplier_from_typical_swh_flows_179d(model)
+      def remove_zone_multiplier_from_typical_swh_flows_crop(model)
         swh_dir = File.dirname(method(:create_water_use).source_location.first)
         data = JSON.parse(File.read("#{swh_dir}/data/typical_water_use_equipment.json"), symbolize_names: true)
         done = {}
@@ -28,7 +28,7 @@ module OpenstudioStandards
           definition = equipment.waterUseEquipmentDefinition
           next if done[definition.handle.to_s]
 
-          per_space_flows = typical_per_space_flows_gal_per_hr_179d(equipment, data)
+          per_space_flows = typical_per_space_flows_gal_per_hr_crop(equipment, data)
           next if per_space_flows.empty?
 
           multiplier = equipment.space.get.multiplier
@@ -44,7 +44,7 @@ module OpenstudioStandards
 
       # Typical peak flows (gal/hr) for one space, for the equipment rows that
       # upstream multiplies by the zone multiplier (per-area flows and One Per Unit).
-      def typical_per_space_flows_gal_per_hr_179d(equipment, data)
+      def typical_per_space_flows_gal_per_hr_crop(equipment, data)
         return [] unless equipment.space.is_initialized
 
         space = equipment.space.get

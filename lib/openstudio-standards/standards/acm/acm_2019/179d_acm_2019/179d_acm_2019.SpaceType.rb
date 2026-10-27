@@ -54,7 +54,7 @@ class ACM179d2019
     candidates = [space_type]
     candidates << space_type.delete_prefix("#{building_type} ")
     candidates.concat(candidates.map { |name| name.sub(/\s+-\s+90\.1(?:-PRM)?-2019\z/, '') })
-    PROTOTYPE_TO_PRM_LPD_SPACE_TYPE.each do |prototype_space_type, prm_space_type|
+    CropBaseline::PROTOTYPE_TO_PRM_LPD_SPACE_TYPE.each do |prototype_space_type, prm_space_type|
       candidates << prototype_space_type if prm_space_type == space_type
     end
     candidates << PRM_WHOLE_BUILDING_ACM_SPACE_TYPE[space_type]

@@ -1,8 +1,8 @@
 # The CROP files and the ACM files load from one flat folder, so this path resolves there.
-require_relative 'crop_2019'
+require_relative 'crop'
 
 # ACM 2019 overlay: loads the ACM data and applies it only when a workflow asks for it.
-class ACM179d2019 < CROP2019
+class ACM179d2019 < CropASHRAE9012019
   register_standard '179D ACM 2019'
 
   ACM_TEMPLATE = '179d-ACM-2019'.freeze

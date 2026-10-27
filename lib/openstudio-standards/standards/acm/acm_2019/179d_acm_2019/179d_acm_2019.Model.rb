@@ -517,7 +517,7 @@ class ACM179d2019
   # How: sets the flat rate per exterior wall area through
   # acm_apply_space_infiltration (the vanilla PRM helper skips unconditioned spaces).
   # Used by: create-typical when an ACM standard is passed in.
-  def model_apply_standard_infiltration(model, infiltration_rate: nil, prm_standard: Standard.build(PRM_2019_TEMPLATE), rate_cfm_per_ft2: ACM_INFILTRATION_RATE_CFM_PER_FT2)
+  def model_apply_standard_infiltration(model, infiltration_rate: nil, prm_standard: Standard.build(CropCommon::PRM_2019_TEMPLATE), rate_cfm_per_ft2: ACM_INFILTRATION_RATE_CFM_PER_FT2)
     unless infiltration_rate.nil?
       OpenStudio.logFree(OpenStudio::Debug, '179d.acm.Model', "Ignoring upstream infiltration_rate #{infiltration_rate}; ACM rate is fixed.")
     end
