@@ -1,21 +1,14 @@
-require_relative '179d_acm_2019'
+require_relative 'crop_2019'
 
-# 179D Prototype 2007 sources the SWH schedule and the interior lighting usage
-# schedule from ASHRAE 90.1-2007 DOE prototype building values.
-class Prototype179d2007 < ACM179d2019
+# CROP Prototype 2007 applies the SWH schedule and the interior lighting schedule
+# from the ASHRAE 90.1-2007 DOE prototype buildings to the baseline.
+class CROPPrototype2007 < CROP2019
+  register_standard 'CROP Prototype 2007'
   register_standard '179D Prototype 2007'
-  register_standard '179D ACM 2005'
 
-  ACM_TEMPLATE = '179d-ACM-2005'.freeze
-  ACM_SCHEDULES_FILE = '179d_acm_2005.schedules.json'.freeze
-  ACM_SPACE_TYPES_FILE = '179d_acm_2005.spc_typ.json'.freeze
-
-  def acm_template
-    ACM_TEMPLATE
-  end
-
-  def acm_data_files
-    [ACM_SCHEDULES_FILE, ACM_SPACE_TYPES_FILE]
+  def initialize
+    super()
+    @template = 'CROP Prototype 2007'
   end
 
   def prototype_standard_2007
@@ -119,13 +112,7 @@ class Prototype179d2007 < ACM179d2019
     OpenStudio.logFree(OpenStudio::Info, '179d.prototype.Model', "Applied 2007 prototype SWH schedule to #{count} WaterUseEquipment object(s).")
     count.positive?
   end
-
-  # All 2007 prototype schedules are applied directly; there is no 2019
-  # prototype schedule to preserve.
-  def acm_space_type_keeps_prototype_schedule?(_space_type)
-    false
-  end
 end
 
-# Backward compatibility alias for the legacy class name
-ACM179dACM2005 = Prototype179d2007
+# Old name of the prototype class. Kept so old tests and scripts still work.
+Prototype179d2007 = CROPPrototype2007
