@@ -247,8 +247,6 @@ end
 # keeps the stock template and data.
 class CropASHRAE901PRM2019 < ASHRAE901PRM2019
   register_standard 'CROP 90.1-PRM-2019'
-  # Old registration of the 2007 prototype schedule class; its methods now live in CropBaseline.
-  register_standard '179D Prototype 2007'
 
   include CropCommon
   include CropProposed
@@ -256,6 +254,3 @@ class CropASHRAE901PRM2019 < ASHRAE901PRM2019
   include CropPRMFanPowerMetadata
   include CropPRMHooks
 end
-
-# Old name of the 2007 prototype class. Kept so old scripts still work.
-Prototype179d2007 = CropASHRAE901PRM2019
