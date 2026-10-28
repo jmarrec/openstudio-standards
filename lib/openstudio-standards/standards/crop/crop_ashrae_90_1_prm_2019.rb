@@ -40,19 +40,10 @@ module CropPRMFanPowerMetadata
   end
 end
 
-# CROP standard for the two PRM-2019 passes: the proposed normalization and the baseline. It
-# keeps the stock template and data. The PRM hooks are still singleton methods that
-# prepare_prm_standard_for_crop_overrides installs on a vanilla PRM standard.
-class CropASHRAE901PRM2019 < ASHRAE901PRM2019
-  register_standard 'CROP 90.1-PRM-2019'
-  # Old registration of the 2007 prototype schedule class; its methods now live in CropBaseline.
-  register_standard '179D Prototype 2007'
-
-  include CropCommon
-  include CropProposed
-  include CropBaseline
-  include CropPRMFanPowerMetadata
-
+# The PRM hooks: singleton methods that prepare_prm_standard_for_crop_overrides installs on a
+# vanilla PRM standard. The hooks call back into CropCommon, CropBaseline and
+# CropPRMFanPowerMetadata, so the includer needs those modules too.
+module CropPRMHooks
   # Installs the CROP hooks on a vanilla PRM standard as singleton methods, so the
   # pinned PRM class stays untouched. Returns the same PRM standard.
   def prepare_prm_standard_for_crop_overrides(prm_standard)
@@ -73,7 +64,7 @@ class CropASHRAE901PRM2019 < ASHRAE901PRM2019
       host_standard.space_type_light_sch_change(model, prm_standard:)
     end
     prm_standard.define_singleton_method(:model_apply_standard_infiltration) do |model, **_options|
-      host_standard.model_apply_nist_infiltration(model, NIST_INFILTRATION_BASELINE_CFM_PER_FT2)
+      host_standard.model_apply_nist_infiltration(model, CropCommon::NIST_INFILTRATION_BASELINE_CFM_PER_FT2)
     end
     prm_standard.define_singleton_method(:model_update_ground_temperature_profile) do |model, climate_zone|
       surfaces_with_fc_factor_boundary = model.getSurfaces.any? { |s| s.outsideBoundaryCondition.to_s == 'GroundFCfactorMethod' }
@@ -165,6 +156,20 @@ class CropASHRAE901PRM2019 < ASHRAE901PRM2019
 
     0.0
   end
+end
+
+# CROP standard for the two PRM-2019 passes: the proposed normalization and the baseline. It
+# keeps the stock template and data.
+class CropASHRAE901PRM2019 < ASHRAE901PRM2019
+  register_standard 'CROP 90.1-PRM-2019'
+  # Old registration of the 2007 prototype schedule class; its methods now live in CropBaseline.
+  register_standard '179D Prototype 2007'
+
+  include CropCommon
+  include CropProposed
+  include CropBaseline
+  include CropPRMFanPowerMetadata
+  include CropPRMHooks
 end
 
 # Old name of the 2007 prototype class. Kept so old scripts still work.

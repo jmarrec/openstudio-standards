@@ -5,6 +5,12 @@ require_relative 'crop'
 class ACM179d2019 < CropASHRAE9012019
   register_standard '179D ACM 2019'
 
+  # Transition: the old class also carried the baseline steps and the PRM hook installer.
+  # Keep them on the overlay until the old names go.
+  include CropBaseline
+  include CropPRMFanPowerMetadata
+  include CropPRMHooks
+
   ACM_TEMPLATE = '179d-ACM-2019'.freeze
   ACM_SCHEDULES_FILE = '179d_acm_2019.schedules.json'.freeze
   ACM_SPACE_TYPES_FILE = '179d_acm_2019.spc_typ.json'.freeze
