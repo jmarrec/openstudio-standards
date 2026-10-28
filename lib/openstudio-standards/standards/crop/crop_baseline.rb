@@ -357,27 +357,8 @@ module CropBaseline
     end
 
     equipments.sort.each do |equipment|
-      schedule_name = nil
-
-      # 1. Look up from space type if available
-      space = equipment.space
-      if space.is_initialized
-        space_type = space.get.spaceType
-        if space_type.is_initialized
-          props = prototype_space_type_properties(std_2007, space_type.get)
-          schedule_name = props['service_water_heating_schedule'] if props && props['service_water_heating_schedule'] && !props['service_water_heating_schedule'].empty?
-        end
-      end
-
-      # 2. Fall back to primary building type SWH schedule
-      if (schedule_name.nil? || schedule_name.empty?) && primary_bldg_type
-        candidate_rows = std_2007.standards_data['space_types'].select do |r|
-          r['building_type'] == primary_bldg_type && r['service_water_heating_schedule'] && !r['service_water_heating_schedule'].empty?
-        end
-        schedule_name = candidate_rows.first['service_water_heating_schedule'] unless candidate_rows.empty?
-      end
-
-      next if schedule_name.nil? || schedule_name.empty?
+      schedule_name = prototype_service_water_heating_schedule_name(equipment, primary_bldg_type)
+      next if schedule_name.nil?
 
       schedule = std_2007.model_add_schedule(model, schedule_name)
       next if schedule.nil?
@@ -387,6 +368,28 @@ module CropBaseline
 
     OpenStudio.logFree(OpenStudio::Info, 'crop.Model', "Applied 2007 prototype SWH schedule to #{count} WaterUseEquipment object(s).")
     count.positive?
+  end
+
+  # Name of the 2007 prototype SWH schedule for one WaterUseEquipment: from its space type,
+  # else from the primary building type. Nil if neither has one.
+  def prototype_service_water_heating_schedule_name(equipment, primary_bldg_type)
+    std_2007 = prototype_standard_2007
+
+    # 1. Look up from space type if available
+    space = equipment.space
+    if space.is_initialized && space.get.spaceType.is_initialized
+      props = prototype_space_type_properties(std_2007, space.get.spaceType.get)
+      schedule_name = props['service_water_heating_schedule'] if props
+      return schedule_name unless schedule_name.nil? || schedule_name.empty?
+    end
+
+    # 2. Fall back to primary building type SWH schedule
+    return nil if primary_bldg_type.nil?
+
+    row = std_2007.standards_data['space_types'].find do |r|
+      r['building_type'] == primary_bldg_type && r['service_water_heating_schedule'] && !r['service_water_heating_schedule'].empty?
+    end
+    row && row['service_water_heating_schedule']
   end
 
   # Old names. Remove after one release.

@@ -612,11 +612,12 @@ class ACM179d2019
   end
 
   # Returns the ACM HVAC operation schedule for the make-up mixing when the model
-  # carries the ACM availability feature. Nil means: follow the exhaust fan.
+  # carries the ACM availability feature. Nil means: follow the exhaust fan. False means: the
+  # ACM schedule is missing, so add no mixing.
   def exhaust_makeup_mixing_schedule(model, building_type: nil)
     return nil unless model.getBuilding.additionalProperties.hasFeature(ACM_HVAC_OPERATION_SCHEDULE_FEATURE)
 
     schedule_name = model_get_acm_standards_data(model, throw_if_not_found: true, building_type:)['hvac_operation_schedule']
-    model_add_schedule(model, schedule_name)
+    model_add_schedule(model, schedule_name) || false
   end
 end

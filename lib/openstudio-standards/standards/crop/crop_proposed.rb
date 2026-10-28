@@ -2,7 +2,8 @@ require_relative 'crop_common'
 require_relative 'crop_winter_solar_design_day'
 
 # Steps for the proposed pass only: warehouse 62.1 ventilation and exhaust make-up mixing in
-# create_typical, and the proposed normalization with its system-type tags and reheat fixes.
+# create_typical, and the system-type tags and reheat fixes of the proposed normalization.
+# The normalization itself is in CropPRMHooks.
 module CropProposed
   HOT_CLIMATE_ZONES = ['0A', '0B', '1A', '1B', '2A', '2B', '3A'].freeze
 
@@ -17,87 +18,7 @@ module CropProposed
     'Office' => { cfm_per_person: 5.0, cfm_per_ft2: 0.06 },
   }.freeze
 
-  # Why: proposed models must keep claimed equipment/LPD choices while matching
-  # baseline-grade neutral HVAC controls.
-  # What: normalizes retained proposed HVAC without rebuilding it or applying
-  # standard equipment efficiency.
-  # How: calls vanilla PRM methods through prm_standard, with CROP hooks around
-  # DCV, exhaust makeup, and reheat fixes. Infiltration and heated-only
-  # ventilation are added earlier by create_typical_building_from_model_comstock.
-  # Used by: the HVAC-control measure for PRM-2019 proposed normalization.
-  def model_create_crop_proposed_normalization(model, climate_zone, hvac_building_type = 'other nonresidential', sizing_run_dir = Dir.pwd, _debug: false, prm_standard: Standard.build(CropCommon::PRM_2019_TEMPLATE))
-    prm_standard = prepare_prm_standard_for_crop_overrides(prm_standard)
-    prm_standard.instance_variable_set(:@sizing_run_dir, sizing_run_dir)
-    ensure_baseline_system_type_tags(model, climate_zone, hvac_building_type)
-
-    prm_call(prm_standard, :model_identify_non_mechanically_cooled_systems, model)
-    if prm_call(prm_standard, :model_get_fan_power_breakdown)
-      model.getAirLoopHVACs.sort.each do |air_loop|
-        supply_fan_w = prm_call(prm_standard, :air_loop_hvac_get_supply_fan_power, air_loop)
-        return_fan_w = prm_call(prm_standard, :air_loop_hvac_get_return_fan_power, air_loop)
-        relief_fan_w = prm_call(prm_standard, :air_loop_hvac_get_relief_fan_power, air_loop)
-        air_loop.thermalZones.sort.each do |zone|
-          zone.additionalProperties.setFeature('supply_fan_w', supply_fan_w.to_f)
-          zone.additionalProperties.setFeature('return_fan_w', return_fan_w.to_f)
-          zone.additionalProperties.setFeature('relief_fan_w', relief_fan_w.to_f)
-        end
-      end
-    end
-
-    unless model.sqlFile.is_initialized || prm_call(prm_standard, :model_run_sizing_run, model, "#{sizing_run_dir}/PROP-DCV-PREPASS")
-      OpenStudio.logFree(OpenStudio::Warn, 'crop.Model',
-                         'PROP-DCV-PREPASS sizing run failed; DCV requirements will be evaluated without sizing SQL.')
-    end
-    prm_call(prm_standard, :model_evaluate_dcv_requirements, model)
-
-    model.getThermalZones.each { |zone| prm_call(prm_standard, :thermal_zone_apply_prm_baseline_supply_temperatures, zone) }
-    apply_exhaust_zone_higher_reheat_design_sat(model)
-    model.getAirLoopHVACs.each { |air_loop| prm_call(prm_standard, :air_loop_hvac_apply_prm_sizing_temperatures, air_loop) }
-    prm_call(prm_standard, :model_apply_prm_baseline_sizing_schedule, model)
-    prm_call(prm_standard, :model_apply_prm_sizing_parameters, model).tap { CropWinterSolarDesignDay.model_add_hot_climate_winter_solar_design_day(model, climate_zone) }
-
-    model.getAirLoopHVACs.sort.each { |air_loop| prm_call(prm_standard, :air_loop_hvac_apply_prm_baseline_controls, air_loop, climate_zone) }
-    apply_heated_only_storage_economizer_override(model, hvac_building_type)
-    each_non_swh_plant_loop(model, prm_standard:) do |plant_loop|
-      prm_call(prm_standard, :plant_loop_apply_prm_baseline_temperatures, plant_loop)
-    end
-
-    return false unless prm_call(prm_standard, :model_run_sizing_run, model, "#{sizing_run_dir}/PROP-SR1")
-
-    model.getAirLoopHVACs.sort.each { |air_loop| prm_call(prm_standard, :air_loop_hvac_apply_minimum_vav_damper_positions, air_loop, false) }
-    apply_exhaust_zone_fixed_minimum_airflow(model)
-    prm_call(prm_standard, :model_apply_multizone_vav_outdoor_air_sizing, model)
-
-    model.getAirLoopHVACs.sort.each { |air_loop| prm_call(prm_standard, :air_loop_hvac_apply_prm_baseline_fan_power, air_loop) }
-    model.getZoneHVACComponents.sort.each { |zone_hvac| prm_call(prm_standard, :zone_hvac_component_apply_prm_baseline_fan_power, zone_hvac) }
-
-    each_non_swh_plant_loop(model, prm_standard:) do |plant_loop|
-      prm_call(prm_standard, :plant_loop_apply_prm_number_of_boilers, plant_loop)
-      prm_call(prm_standard, :plant_loop_apply_prm_number_of_chillers, plant_loop)
-      prm_call(prm_standard, :plant_loop_apply_prm_number_of_cooling_towers, plant_loop)
-    end
-
-    return false unless prm_call(prm_standard, :model_run_sizing_run, model, "#{sizing_run_dir}/PROP-SR2")
-
-    each_non_swh_plant_loop(model, prm_standard:) do |plant_loop|
-      prm_call(prm_standard, :plant_loop_apply_prm_baseline_pump_power, plant_loop)
-      prm_call(prm_standard, :plant_loop_apply_prm_baseline_pumping_type, plant_loop)
-    end
-
-    prm_call(prm_standard, :model_set_baseline_demand_control_ventilation, model, climate_zone)
-    prm_call(prm_standard, :model_refine_size_dependent_values, model, sizing_run_dir)
-    prm_call(prm_standard, :model_temp_fix_ems_references, model)
-    prm_call(prm_standard, :model_remove_unused_resource_objects, model)
-    prm_call(prm_standard, :model_add_reporting_tolerances, model)
-    apply_heated_only_storage_economizer_override(model, hvac_building_type)
-    apply_exhaust_zone_reheat_coil_capacity_floor(model)
-    apply_reheat_max_air_temperature_headroom(model)
-    apply_reheat_max_flow_during_reheat(model)
-
-    true
-  end
-
-  # Schedule for the make-up mixing. Nil means: follow the exhaust fan.
+  # Schedule for the make-up mixing. Nil means: follow the exhaust fan. False means: add no mixing.
   # The ACM overlay overrides this method.
   def exhaust_makeup_mixing_schedule(_model, building_type: nil); end
 
@@ -113,6 +34,7 @@ module CropProposed
     return if fans.empty?
 
     schedule = exhaust_makeup_mixing_schedule(model, building_type:)
+    return if schedule.equal?(false)
 
     fans.each do |fan|
       next unless fan.thermalZone.is_initialized
@@ -378,7 +300,4 @@ module CropProposed
       air_loop.airLoopHVACOutdoorAirSystem.get.getControllerOutdoorAir.setEconomizerControlType('NoEconomizer')
     end
   end
-
-  # Old names. Remove after one release.
-  alias model_create_179d_proposed_normalization model_create_crop_proposed_normalization
 end
