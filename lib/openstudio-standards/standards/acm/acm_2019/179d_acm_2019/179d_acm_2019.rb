@@ -1,11 +1,22 @@
-class ACM179dACM2019 < Standard
+# The CROP files and the ACM files load from one flat folder, so this path resolves there.
+require_relative 'crop'
+
+# ACM 2019 overlay: loads the ACM data and applies it only when a workflow asks for it.
+class ACM179d2019 < CropASHRAE9012019
   register_standard '179D ACM 2019'
-  attr_reader :template
+
+  # Transition: the old class also carried the baseline steps and the PRM hook installer.
+  # Keep them on the overlay until the old names go.
+  include CropBaseline
+  include CropPRMFanPowerMetadata
+  include CropPRMHooks
 
   ACM_TEMPLATE = '179d-ACM-2019'.freeze
   ACM_SCHEDULES_FILE = '179d_acm_2019.schedules.json'.freeze
   ACM_SPACE_TYPES_FILE = '179d_acm_2019.spc_typ.json'.freeze
   ACM_EXTEND_TABLES = ['schedules'].freeze
+  # Building feature that marks a model where the ACM HVAC operation schedule was applied.
+  ACM_HVAC_OPERATION_SCHEDULE_FEATURE = 'acm_hvac_operation_schedule'.freeze
 
   def initialize
     super()
@@ -65,3 +76,6 @@ class ACM179dACM2019 < Standard
     raise msg
   end
 end
+
+# Old name of the ACM overlay class. Kept so old load guards, tests and scripts still work.
+ACM179dACM2019 = ACM179d2019

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-# Shared 179D -> PRM-2019 building-type categories for the baseline generator.
+# 179D -> PRM-2019 building-type categories for the baseline generator.
 # Values must match the openstudio-standards PRM data tables exactly.
-module ACM179dPRM2019BuildingTypeMap
+module CropBuildingTypeMap
   BUILDING_TYPE_MAP = {
     'MidriseApartment' => {
       hvac_building_type: 'residential',
@@ -108,6 +108,9 @@ module ACM179dPRM2019BuildingTypeMap
     row = BUILDING_TYPE_MAP[building_type]
     return row if row
 
-    raise ArgumentError, "No PRM-2019 building-type mapping for '#{building_type}'. Add it to ACM179dPRM2019BuildingTypeMap::BUILDING_TYPE_MAP."
+    raise ArgumentError, "No PRM-2019 building-type mapping for '#{building_type}'. Add it to CropBuildingTypeMap::BUILDING_TYPE_MAP."
   end
 end
+
+# Old name of the map. Kept so old callers still work.
+ACM179dPRM2019BuildingTypeMap = CropBuildingTypeMap
