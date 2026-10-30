@@ -2,7 +2,7 @@ require_relative 'crop_common'
 
 # Steps for the baseline pass only: PRM lighting space types without the occupancy-sensor
 # credit, on/off zone fans, the OA scale to the proposed total, PRM water heater efficiency,
-# chiller pump staging, and the 2007 prototype SWH and lighting schedules.
+# and chiller pump staging.
 module CropBaseline
   PROTOTYPE_TO_PRM_LPD_SPACE_TYPE = {
     'WholeBuilding - Sm Office' => 'office - whole building',
@@ -285,111 +285,6 @@ module CropBaseline
     sensor.setKeyName(secondary_plant.nameString)
     OpenStudio.logFree(OpenStudio::Info, 'openstudio.standards.PlantLoop', "For #{primary_plant.name}, chiller pump EMS now senses demand on #{secondary_plant.name}.")
     true
-  end
-
-  def prototype_standard_2007
-    @prototype_standard_2007 ||= Standard.build('90.1-2007')
-  end
-
-  def prototype_space_type_properties(std_2007, space_type)
-    props = std_2007.space_type_get_standards_data(space_type)
-    return props if props && !props.empty?
-
-    additional = space_type.additionalProperties
-    if additional.hasFeature('prototype_standards_space_type')
-      proto_name = additional.getFeatureAsString('prototype_standards_space_type').get
-      bldg_type = space_type.standardsBuildingType.is_initialized ? space_type.standardsBuildingType.get : nil
-      if bldg_type
-        props = std_2007.standards_data['space_types'].find do |r|
-          r['building_type'] == bldg_type && r['space_type'] == proto_name
-        end
-        return props if props && !props.empty?
-      end
-    end
-
-    bldg_type = space_type.standardsBuildingType.is_initialized ? space_type.standardsBuildingType.get : nil
-    if bldg_type
-      st_name = space_type.nameString
-      candidate_rows = std_2007.standards_data['space_types'].select { |r| r['building_type'] == bldg_type }
-      candidate_rows.find { |r| st_name.include?(r['space_type']) }
-    end
-  end
-
-  # Applies ASHRAE 90.1-2007 DOE prototype lighting schedules to each space type in the model.
-  def model_apply_prototype_lighting_schedule(model)
-    std_2007 = prototype_standard_2007
-    count = 0
-
-    model.getSpaceTypes.sort.each do |space_type|
-      lights = space_type.lights
-      next if lights.empty?
-
-      props = prototype_space_type_properties(std_2007, space_type)
-      next if props.nil? || props['lighting_schedule'].nil? || props['lighting_schedule'].empty?
-
-      schedule_name = props['lighting_schedule']
-      schedule = std_2007.model_add_schedule(model, schedule_name)
-      next if schedule.nil?
-
-      lights.each do |light|
-        count += 1 if light.setSchedule(schedule)
-      end
-    end
-
-    OpenStudio.logFree(OpenStudio::Info, 'crop.Model', "Applied 2007 prototype lighting schedule to #{count} Lights object(s).")
-    count.positive?
-  end
-
-  # Replaces existing WaterUseEquipment flow rate fraction schedules with ASHRAE 90.1-2007 prototype schedules.
-  def model_apply_prototype_service_water_heating(model, building_type: nil)
-    equipments = model.getWaterUseEquipments
-    return false if equipments.empty?
-
-    std_2007 = prototype_standard_2007
-    count = 0
-    primary_bldg_type = building_type
-    if primary_bldg_type.nil?
-      begin
-        primary_bldg_type = model_get_primary_building_type(model)
-      rescue StandardError => e
-        OpenStudio.logFree(OpenStudio::Debug, 'crop.Model', "Could not determine primary building type: #{e.message}")
-      end
-    end
-
-    equipments.sort.each do |equipment|
-      schedule_name = prototype_service_water_heating_schedule_name(equipment, primary_bldg_type)
-      next if schedule_name.nil?
-
-      schedule = std_2007.model_add_schedule(model, schedule_name)
-      next if schedule.nil?
-
-      count += 1 if equipment.setFlowRateFractionSchedule(schedule)
-    end
-
-    OpenStudio.logFree(OpenStudio::Info, 'crop.Model', "Applied 2007 prototype SWH schedule to #{count} WaterUseEquipment object(s).")
-    count.positive?
-  end
-
-  # Name of the 2007 prototype SWH schedule for one WaterUseEquipment: from its space type,
-  # else from the primary building type. Nil if neither has one.
-  def prototype_service_water_heating_schedule_name(equipment, primary_bldg_type)
-    std_2007 = prototype_standard_2007
-
-    # 1. Look up from space type if available
-    space = equipment.space
-    if space.is_initialized && space.get.spaceType.is_initialized
-      props = prototype_space_type_properties(std_2007, space.get.spaceType.get)
-      schedule_name = props['service_water_heating_schedule'] if props
-      return schedule_name unless schedule_name.nil? || schedule_name.empty?
-    end
-
-    # 2. Fall back to primary building type SWH schedule
-    return nil if primary_bldg_type.nil?
-
-    row = std_2007.standards_data['space_types'].find do |r|
-      r['building_type'] == primary_bldg_type && r['service_water_heating_schedule'] && !r['service_water_heating_schedule'].empty?
-    end
-    row && row['service_water_heating_schedule']
   end
 
   # Old names. Remove after one release.
