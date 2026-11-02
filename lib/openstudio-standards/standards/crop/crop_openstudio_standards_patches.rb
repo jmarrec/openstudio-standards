@@ -70,6 +70,43 @@ module OpenstudioStandards
   end
 end
 
+# Primary and secondary zones: upstream converts the same schedules to 8760 arrays again for each
+# space and each load object, which takes minutes on large models. While the wrapper runs, it keeps
+# the hourly values of each schedule. Nothing in the call changes a schedule.
+module OpenstudioStandards
+  module Schedules
+    class << self
+      attr_accessor :crop_hourly_values_cache
+
+      unless method_defined?(:schedule_get_hourly_values_without_crop_cache)
+        alias schedule_get_hourly_values_without_crop_cache schedule_get_hourly_values
+      end
+
+      def schedule_get_hourly_values(schedule)
+        cache = crop_hourly_values_cache
+        return schedule_get_hourly_values_without_crop_cache(schedule) unless cache
+
+        key = schedule.handle.to_s
+        cache[key] = schedule_get_hourly_values_without_crop_cache(schedule) unless cache.key?(key)
+        cache[key]&.dup
+      end
+    end
+  end
+end
+
+class ASHRAE901PRM
+  unless method_defined?(:model_differentiate_primary_secondary_thermal_zones_without_crop_cache)
+    alias model_differentiate_primary_secondary_thermal_zones_without_crop_cache model_differentiate_primary_secondary_thermal_zones
+  end
+
+  def model_differentiate_primary_secondary_thermal_zones(*args)
+    OpenstudioStandards::Schedules.crop_hourly_values_cache = {}
+    model_differentiate_primary_secondary_thermal_zones_without_crop_cache(*args)
+  ensure
+    OpenstudioStandards::Schedules.crop_hourly_values_cache = nil
+  end
+end
+
 # Daylighted areas: upstream joins the sidelit polygons in pointer order. When the union has
 # an inner hole (windows on all four walls), its fallback drops the first polygon, so the area
 # changes from run to run and can be larger than the floor. This wrapper keeps the upstream
