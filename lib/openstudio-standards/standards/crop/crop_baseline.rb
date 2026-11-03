@@ -41,7 +41,29 @@ module CropBaseline
     'Laundry' => 'laundry/washing',
     'ElevatorCore' => 'elevator core',
     'Elec/MechRoom' => 'electrical/mechanical',
+    'Apartment' => 'apartment - hardwired',
+    'Dining' => 'dining - all other',
+    'Gym - audience' => 'audience seating - gymnasium',
   }.freeze
+
+  # Building types whose prototype space type needs another PRM lighting
+  # category than PROTOTYPE_TO_PRM_LPD_SPACE_TYPE gives. Checked first.
+  PROTOTYPE_TO_PRM_LPD_SPACE_TYPE_BY_BUILDING_TYPE = {
+    'FullServiceRestaurant' => { 'Dining' => 'dining - family' },
+    'QuickServiceRestaurant' => { 'Dining' => 'dining - cafeteria/fast food' },
+  }.freeze
+
+  # PRM lpd_space_type for a prototype space type name, or nil when unmapped.
+  def self.prm_lpd_space_type_for(prototype_space_type, building_type = nil)
+    PROTOTYPE_TO_PRM_LPD_SPACE_TYPE_BY_BUILDING_TYPE.dig(building_type, prototype_space_type) ||
+      PROTOTYPE_TO_PRM_LPD_SPACE_TYPE[prototype_space_type]
+  end
+
+  # Prototype space type names that map to prm_space_type in either map.
+  def self.prototype_space_types_for_prm_lpd(prm_space_type)
+    maps = [PROTOTYPE_TO_PRM_LPD_SPACE_TYPE, *PROTOTYPE_TO_PRM_LPD_SPACE_TYPE_BY_BUILDING_TYPE.values]
+    maps.flat_map { |map| map.select { |_prototype, prm| prm == prm_space_type }.keys }.uniq
+  end
 
   # Replaces the Fan:ConstantVolume supply fan of each zone unit that has a fan
   # operating mode schedule with a Fan:OnOff fan of the same size and power.
@@ -89,7 +111,7 @@ module CropBaseline
     if model.getBuilding.standardsBuildingType.is_initialized || model.getSpaceTypes.any? { |space_type| space_type.standardsBuildingType.is_initialized }
       building_type = model_get_primary_building_type(model, remap_office: true, remap_retail: true)
     end
-    prepare_space_types_for_prm_lighting(model, prm_standard:)
+    prepare_space_types_for_prm_lighting(model, prm_standard:, building_type:)
     { building_type:, proposed_total_oa_m3s: compute_total_design_oa_m3_per_s(model) }
   end
 
@@ -203,9 +225,10 @@ module CropBaseline
   # Why: PRM baseline lighting lookup needs PRM-valid space type names.
   # What: maps prototype space type names to PRM LPD table names.
   # How: leaves already-valid PRM names alone and stamps only known prototype
-  # names.
+  # names. The building type (the space type's own, else building_type:) picks
+  # the category where it differs by building type.
   # Used by: model_prepare_crop_baseline.
-  def prepare_space_types_for_prm_lighting(model, prm_standard: Standard.build(CropCommon::PRM_2019_TEMPLATE))
+  def prepare_space_types_for_prm_lighting(model, prm_standard: Standard.build(CropCommon::PRM_2019_TEMPLATE), building_type: nil)
     valid_lpd = (prm_standard.standards_data['prm_interior_lighting'] || []).filter_map { |row| row['lpd_space_type'] }.uniq
     model.getSpaceTypes.each do |space_type|
       next unless space_type.standardsSpaceType.is_initialized
@@ -214,7 +237,8 @@ module CropBaseline
       space_type.additionalProperties.setFeature('prototype_standards_space_type', current)
       next if valid_lpd.include?(current)
 
-      mapped = PROTOTYPE_TO_PRM_LPD_SPACE_TYPE[current]
+      lookup_building_type = space_type.standardsBuildingType.is_initialized ? space_type.standardsBuildingType.get : building_type
+      mapped = CropBaseline.prm_lpd_space_type_for(current, lookup_building_type)
       if mapped.nil?
         OpenStudio.logFree(OpenStudio::Warn, 'crop.Model', "No PRM lpd_space_type mapping for '#{current}'; baseline lighting may be zero.")
         next
