@@ -139,7 +139,18 @@ module CropBaseline
     return wh_props unless wh_props == {}
 
     search_criteria['draw_profile'] = 'medium'
-    prm_2019_find_water_heater_efficiency_requirement(prm_standard, search_criteria, capacity_btu_per_hr, volume_gal)
+    wh_props = prm_2019_find_water_heater_efficiency_requirement(prm_standard, search_criteria, capacity_btu_per_hr, volume_gal)
+    return wh_props unless wh_props == {}
+
+    prm_2019_water_heater_requirement_without_storage_band(prm_standard, search_criteria)
+  end
+
+  # The UEF rows of the small storage heaters cover 20 to 100 gal (gas) and 20 to 120 gal (electric).
+  # A tank outside these bands, for example a 6 gal booster, uses the commercial row of its fuel, which has no storage band.
+  def prm_2019_water_heater_requirement_without_storage_band(prm_standard, search_criteria)
+    rows = prm_standard.model_find_objects(prm_standard.standards_data['water_heaters'], search_criteria.except('draw_profile'))
+    rows = rows.select { |row| row['minimum_storage'].nil? && row['maximum_storage'].nil? }
+    rows.size == 1 ? rows[0] : {}
   end
 
   def prm_2019_find_water_heater_efficiency_requirement(prm_standard, search_criteria, capacity_btu_per_hr, volume_gal)
